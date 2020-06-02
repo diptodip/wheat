@@ -2,4 +2,4 @@
 
 ## Introduction
 
-Simple implementation of raytracing, tracked in complexity over time through commit history. Follows Raytracing in a Weekend.
+Simple implementation of raytracing in Rust for education. Follows Raytracing in a Weekend.
