@@ -1,4 +1,4 @@
-# raytracer
+# raytracer 🔦🔎
 
 ## Introduction
 
