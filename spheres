@@ -1,0 +1,6 @@
+#!/bin/bash
+
+cargo clean;
+rm -f spheres.ppm;
+cargo run >> spheres.ppm;
+open spheres.ppm;
