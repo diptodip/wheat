@@ -29,13 +29,14 @@ fn trace(ray: &Ray, sphere: &Sphere) -> RGB {
         Some(intersection) => {
             //
             // uncomment to print intersection locations
-            // eprintln!("[info] found intersection at {} {} {}", intersection.x, intersection.y, intersection.z);
-            let surface_normal = (intersection - sphere.origin).unit_vector();
-            return rgb(0.5 * (surface_normal.x + 1.0), 0.5 * (surface_normal.y + 1.0), 0.5 * (surface_normal.z + 1.0));
+            // eprintln!("[info] found intersection at {} {} {}", intersection.0, intersection.1, intersection.2);
+            let surface_normal = (intersection - sphere.origin).l2_normalize();
+            let rescaled_normal = 0.5 * (surface_normal + 1.0);
+            return rgb(rescaled_normal.0, rescaled_normal.1, rescaled_normal.2);
         },
         None => {
-            let ray_direction = ray.direction.unit_vector();
-            let height = 0.5 * (ray_direction.y + 1.0);
+            let ray_direction = ray.direction.l2_normalize();
+            let height = 0.5 * (ray_direction.1 + 1.0);
             return rgb((1.0 - height) + height * 0.5, (1.0 - height) + height * 0.7, (1.0 - height) + height * 1.0);
         }
     }
