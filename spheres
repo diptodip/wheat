@@ -1,6 +1,7 @@
 #!/bin/bash
 
+cd ~/src/raytracer;
 cargo clean;
 rm -f spheres.ppm;
-cargo run >> spheres.ppm;
+time cargo run >> spheres.ppm;
 open spheres.ppm;
