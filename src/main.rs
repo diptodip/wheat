@@ -76,8 +76,8 @@ fn spheres() {
         for col in 0..cols {
             // calculate ray for current pixel
             // making sure to center ray within pixel
-            let ray = camera.ray_from_pixel((row as f64 + 0.5) / (rows as f64),
-                                            (col as f64 + 0.5) / (cols as f64));
+            let ray = camera.prime_ray((row as f64 + 0.5) / (rows as f64),
+                                       (col as f64 + 0.5) / (cols as f64));
             // trace ray for current pixel
             let color = trace(&ray, &big_sphere);
             // add observed color from trace to image at current pixel

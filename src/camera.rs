@@ -19,7 +19,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn ray_from_pixel(self, row_frac: f64, col_frac: f64) -> Ray {
+    pub fn prime_ray(self, row_frac: f64, col_frac: f64) -> Ray {
         let height = self.image_plane.height as f64;
         let width = self.image_plane.width as f64;
         let basis1 = cross(&self.image_plane.up,
