@@ -4,6 +4,7 @@ use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign, N
 pub struct Vec3D(pub f64, pub f64, pub f64);
 
 impl Vec3D {
+    #[inline]
     fn normalize(self, norm: f64) -> Vec3D {
         Vec3D(self.0 / norm, self.1 / norm, self.2 / norm)
     }
