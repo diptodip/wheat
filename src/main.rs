@@ -44,44 +44,42 @@ fn trace(ray: &Ray, sphere: &Sphere) -> RGB {
 
 fn spheres() {
     // construct camera
-    let fov = (PI / 2.0) as f64;
+    let fov = PI / 2.0;
     let aspect_ratio = 16.0 / 9.0;
     let (image_plane_height, image_plane_width) = fov_to_image_plane_size(fov, aspect_ratio);
-    let (rows, cols, pixel_size) = image_plane_size_to_pixel_shape(image_plane_height, image_plane_width, 2.0 / 216.0);
+    let (rows, cols, pixel_size) = image_plane_size_to_pixel_shape(image_plane_height, image_plane_width, 2.0 / 480.0);
     let camera = Camera {
-        origin: vec3d(0.0, 0.0, 0.0),
+        origin: Vec3D(0.0, 0.0, 0.0),
         image_plane: ImagePlane {
-            origin: vec3d(0.0, 0.0, -1.0),
-            norm: vec3d(0.0, 0.0, 1.0),
-            up: vec3d(0.0, 1.0, 0.0),
+            origin: Vec3D(0.0, 0.0, -1.0),
+            norm: Vec3D(0.0, 0.0, 1.0),
+            up: Vec3D(0.0, 1.0, 0.0),
             height: image_plane_height,
             width: image_plane_width,
         }
     };
     let rows = rows as usize;
     let cols = cols as usize;
-    let odd_rows = if rows % 2 == 0 { rows - 1 } else { rows };
-    let odd_cols = if cols % 2 == 0 { cols - 1 } else { cols };
     // construct blank image
     let mut image = vec![vec![vec![0.0; 3]; cols]; rows];
     // construct sphere objects in scene
-    let big_sphere = Sphere {origin: vec3d(0.0, 0.0, -1.0), radius: 0.5};
+    let big_sphere = Sphere {origin: Vec3D(0.0, 0.0, -1.0), radius: 0.5};
     // loop over pixels and create rays
-    for row in (0..rows).rev() {
+    for row in 0..rows {
         for col in 0..cols {
-            // calculate ray for current pixel
-            let ray = camera.ray_from_pixel((row as f64) / (odd_rows as f64), (col as f64) / (odd_cols as f64));
+            // calculate ray for current pixel, making sure to center ray within pixel
+            let ray = camera.ray_from_pixel((row as f64 + 0.5) / (rows as f64), (col as f64 + 0.5) / (cols as f64));
             // trace ray for current pixel
             let color = trace(&ray, &big_sphere);
             // add observed color from trace to image at current pixel
-            image[rows - row - 1][col][0] = color.r;
-            image[rows - row - 1][col][1] = color.g;
-            image[rows - row - 1][col][2] = color.b;
+            image[row][col][0] = color.r();
+            image[row][col][1] = color.g();
+            image[row][col][2] = color.b();
         }
-        eprintln!("[info] remaining scan lines: {}", row);
+        eprintln!("[info] remaining scan lines: {}", rows - row - 1);
     }
     eprintln!("[info] saving image...");
-    save_rgb(image, rows, cols);
+    output_ppm(image, rows, cols);
     eprintln!("[ok] done!");
 }
 
