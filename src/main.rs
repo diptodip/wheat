@@ -17,8 +17,8 @@ use geometry::Sphere;
 mod camera;
 use camera::Camera;
 use camera::ImagePlane;
-use camera::fov_to_image_plane_size;
-use camera::image_plane_size_to_pixel_shape;
+use camera::fov_to_imsize;
+use camera::imsize_to_pixels;
 
 fn trace(ray: &Ray, sphere: &Sphere) -> RGB {
     // determine if ray intersects
