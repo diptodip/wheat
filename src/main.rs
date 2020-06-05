@@ -1,11 +1,16 @@
 use std::f64::consts::PI;
 
+extern crate rand;
+use rand::prelude::*;
+
 mod linalg;
 use linalg::Vec3D;
+use linalg::dot;
 
 mod colors;
 use colors::RGB;
 use colors::rgb;
+use colors::vec_to_rgb;
 
 mod io;
 use io::output_ppm;
@@ -14,7 +19,9 @@ mod geometry;
 use geometry::Ray;
 use geometry::Sphere;
 use geometry::Intersects;
+use geometry::Intersection;
 use geometry::Intersectable;
+use geometry::first_intersection;
 
 mod camera;
 use camera::Camera;
