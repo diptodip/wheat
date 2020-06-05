@@ -117,7 +117,7 @@ macro_rules! implement_assign_operation {
     };
 }
 
-macro_rules ! implement_unary_operation {
+macro_rules! implement_unary_operation {
     ($trait: ident, $trait_fn: ident, $op: tt) => {
         impl $trait for Vec3D {
             type Output = Vec3D;
