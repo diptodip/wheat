@@ -25,9 +25,9 @@ impl Camera {
         let basis1 = cross(&self.image_plane.up,
                            &self.image_plane.norm).l2_normalize();
         let basis2 = cross(&self.image_plane.norm, &basis1).l2_normalize();
-        let left_top = (self.image_plane.origin
-                        - (width * basis1 / 2.0)
-                        + (height * basis2 / 2.0));
+        let left_top = self.image_plane.origin
+                       - (width * basis1 / 2.0)
+                       + (height * basis2 / 2.0);
         return Ray {
             origin: self.origin,
             direction: (left_top
