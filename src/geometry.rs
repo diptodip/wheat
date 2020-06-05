@@ -112,4 +112,11 @@ impl Intersects for Intersectable {
             Intersectable::Sphere(s) => s.intersects(ray),
         }
     }
+
+    fn material(&self) -> Material {
+        match self {
+            Intersectable::Sphere(s) => s.material(),
+        }
+    }
+}
 }
