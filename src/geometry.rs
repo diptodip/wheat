@@ -16,10 +16,11 @@ pub struct Ray {
 
 impl Ray {
     pub fn at(&self, t:f64) -> Vec3D {
-        t * self.direction
+        self.origin + t * self.direction
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Intersection {
     pub point: Vec3D,
     pub local_normal: Vec3D,
