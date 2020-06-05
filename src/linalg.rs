@@ -1,16 +1,21 @@
 use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign, Neg};
+use rand::prelude::*;
 
 #[derive(Copy, Clone)]
 pub struct Vec3D(pub f64, pub f64, pub f64);
 
 impl Vec3D {
     #[inline]
+    pub fn length(self) -> f64 {
+        (self.0 * self.0 + self.1 * self.1 + self.2 * self.2).sqrt()
+    }
+    #[inline]
     fn normalize(self, norm: f64) -> Vec3D {
         Vec3D(self.0 / norm, self.1 / norm, self.2 / norm)
     }
 
     pub fn l2_normalize(self) -> Vec3D {
-        let norm = (self.0 * self.0 + self.1 * self.1 + self.2 * self.2).sqrt();
+        let norm = self.length();
         self.normalize(norm)
     }
 
