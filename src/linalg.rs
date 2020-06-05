@@ -43,6 +43,12 @@ impl Vec3D {
               rng.gen_range(min1, max1),
               rng.gen_range(min2, max2))
     }
+
+    pub fn clamp(self, min: f64, max: f64) -> Vec3D {
+        Vec3D(self.0.max(min).min(max),
+              self.1.max(min).min(max),
+              self.2.max(min).min(max))
+    }
 }
 
 macro_rules! implement_binary_operation {
