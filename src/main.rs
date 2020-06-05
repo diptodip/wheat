@@ -41,18 +41,34 @@ fn diffuse_bounce(intersection: &Intersection,
         direction: bounce_vector,
     }
 }
+
+fn reflected_bounce(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray) -> Ray {
+    let normal_perpendicular_component = ray.direction - intersection.local_normal;
+    let normal_parallel_component = ray.direction - normal_perpendicular_component;
+    Ray {
+        origin: intersection.point,
+        direction: -normal_perpendicular_component + normal_parallel_component,
+    }
+}
     match result {
         // calculate color at intersection point
-        // TODO(dip): implement recursion, for now only return color
-        Some(intersection) => {
+        // TODO(dip): calculate color using material color
+        Some((intersection, intersectable)) => {
             // uncomment to print intersection locations
             // eprintln!("[info] found intersection at {} {} {}",
             //           intersection.point.0,
             //           intersection.point.1,
             //           intersection.point.2);
-            let local_normal = intersection.local_normal;
-            let rescaled_normal = 0.5 * (local_normal + 1.0);
-            return rgb(rescaled_normal.0, rescaled_normal.1, rescaled_normal.2);
+            let mut rng = rand::thread_rng();
+            if let Material::Diffuse(d) = intersectable.material() {
+                // light bounces if material is diffuse,
+                // so we recurse and trace a bounced ray
+                let bounce_ray = &diffuse_bounce(&intersection, intersectable);
+                let color_vec =  d.color.to_vec3d() * trace(bounce_ray, world, depth - 1).to_vec3d();
+                return vec_to_rgb(color_vec);
+            }
+            // TODO(dip): handle other materials
+            return rgb(0.0, 0.0, 0.0);
         },
         None => {
             let ray_direction = ray.direction.l2_normalize();
