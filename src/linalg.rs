@@ -28,6 +28,7 @@ impl Vec3D {
             max = self.2
         }
         let norm = max;
+        max += 1e-12;
         self.normalize(norm)
     }
 }
