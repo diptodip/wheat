@@ -70,18 +70,21 @@ impl Intersects for Sphere {
         let discriminant_sqrt = discriminant.sqrt();
         let t0 = (-h - discriminant_sqrt) / a;
         let t1 = (-h + discriminant_sqrt) / a;
-        if t0 < 0.0 && t1 < 0.0 {
+        if t0 < 0.01 && t1 < 0.01 {
             return None;
         }
-        let point = if t0 < t1 { ray.at(t0) } else { ray.at(t1) };
+        let t = if t0 >= 0.01 { t0 }  else { t1 };
+        let point = ray.at(t);
         let surface_normal = self.surface_normal(point);
         let mut inside = false;
         if dot(&ray.direction, &surface_normal) > 0.0 {
             inside = true;
         }
         let local_normal = if inside { -surface_normal } else { surface_normal };
+        let distance = (point - ray.origin).length();
         let intersection = Intersection {
             point: point,
+            distance: distance,
             local_normal: local_normal,
             inside: inside,
         };
