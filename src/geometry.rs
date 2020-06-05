@@ -119,4 +119,29 @@ impl Intersects for Intersectable {
         }
     }
 }
+
+pub fn first_intersection<'a>(intersections: Vec<Option<Intersection>>,
+                              intersectables: &'a Vec<&Intersectable>)
+                              -> Option<(Intersection, &'a Intersectable)> {
+    let num_objects = intersectables.len() as usize;
+    let mut closest_distance = INFINITY;
+    let mut closest_intersectable = intersectables[0];
+    let mut closest_intersection = intersections[0];
+    for i in 0..num_objects {
+        let result = intersections[i];
+        match result {
+            Some(intersection) => {
+                if intersection.distance < closest_distance {
+                    closest_distance = intersection.distance;
+                    closest_intersectable = intersectables[i];
+                    closest_intersection = intersections[i];
+                }
+            },
+            None => {}
+        }
+    }
+    if closest_distance == INFINITY {
+        return None;
+    }
+    Some((closest_intersection?, closest_intersectable))
 }
