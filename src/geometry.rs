@@ -1,6 +1,13 @@
 use std::option::Option;
+use std::f64::INFINITY;
+use std::f64::consts::PI;
+
+use crate::rand::prelude::*;
+
 use crate::linalg::Vec3D;
 use crate::linalg::dot;
+
+use crate::materials::Material;
 
 pub struct Ray {
     pub origin: Vec3D,
