@@ -101,7 +101,7 @@ fn spheres() {
                                                                 aspect_ratio);
     let (rows, cols, pixel_size) = imsize_to_pixels(image_plane_height,
                                                     image_plane_width,
-                                                    2.0 / 480.0);
+                                                    2.0 / 216.0);
     let camera = Camera {
         origin: Vec3D(0.0, 0.0, 0.0),
         image_plane: ImagePlane {
@@ -117,22 +117,39 @@ fn spheres() {
     // construct blank image
     let mut image = vec![vec![vec![0.0; 3]; cols]; rows];
     // construct sphere objects in scene
-    let big_sphere = Intersectable::Sphere(Sphere {origin: Vec3D(0.0, 0.0, -1.0), radius: 0.5});
+    let big_sphere = Intersectable::Sphere(Sphere {
+        origin: Vec3D(0.0, 0.0, -1.0),
+        radius: 0.5,
+        material: Material::Diffuse(Diffuse { color: rgb(0.7, 0.3, 0.3) }),
+    });
+    let ground_sphere = Intersectable::Sphere(Sphere {
+        origin: Vec3D(0.0, -100.5, -1.0),
+        radius: 100.0,
+        material: Material::Diffuse(Diffuse { color: rgb(0.8, 0.8, 0.0) }),
+    });
+    // create pointer to list of objects, aka the world
+    let world = &vec![&big_sphere, &ground_sphere];
     // loop over pixels and create rays
     eprintln!("[start] processing {}px x {}px (width x height)...", cols, rows);
     eprintln!("[info] remaining scan lines: {}", rows);
+    let samples_per_pixel = 100.0;
+    let mut rng = rand::thread_rng();
     for row in 0..rows {
         for col in 0..cols {
-            // calculate ray for current pixel
-            // making sure to center ray within pixel
-            let ray = camera.prime_ray((row as f64 + 0.5) / (rows as f64),
-                                       (col as f64 + 0.5) / (cols as f64));
-            // trace ray for current pixel
-            let color = trace(&ray, &big_sphere);
-            // add observed color from trace to image at current pixel
-            image[row][col][0] = color.r();
-            image[row][col][1] = color.g();
-            image[row][col][2] = color.b();
+            for sample in 0..samples_per_pixel as usize {
+                // calculate ray for current pixel
+                // making sure to center ray within pixel
+                // we also perturb the ray direction slightly per sample
+                let row_frac = (row as f64 + 0.5 + rng.gen::<f64>()) / (rows as f64);
+                let col_frac = (col as f64 + 0.5 + rng.gen::<f64>()) / (cols as f64);
+                let ray = &camera.prime_ray(row_frac, col_frac);
+                // trace ray for current pixel
+                let color = trace(ray, world, 50);
+                // add observed color from trace to image at current pixel
+                image[row][col][0] += (color.r() / samples_per_pixel);
+                image[row][col][1] += (color.g() / samples_per_pixel);
+                image[row][col][2] += (color.b() / samples_per_pixel);
+            }
         }
         eprintln!("[info] remaining scan lines: {}", rows - row - 1);
     }
