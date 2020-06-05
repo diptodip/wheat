@@ -90,6 +90,10 @@ impl Intersects for Sphere {
         };
         Some(intersection)
     }
+
+    fn material(&self) -> Material {
+        self.material
+    }
 }
 
 pub enum Intersectable {
