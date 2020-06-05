@@ -19,9 +19,18 @@ impl RGB {
     pub fn b(self) -> f64 {
         return self.b;
     }
+
+    pub fn to_vec3d(self) -> Vec3D {
+        Vec3D(self.r, self.g, self.b)
+    }
 }
 
 pub fn rgb(r: f64, g: f64, b: f64) -> RGB {
-    let colors = Vec3D(r, g, b).max_normalize();
-    RGB { r: colors.0, g: colors.1, b: colors.2 }
+    let color_vec = Vec3D(r, g, b).clamp(0.0, 1.0);
+    RGB { r: color_vec.0, g: color_vec.1, b: color_vec.2}
+}
+
+pub fn vec_to_rgb(color_vec: Vec3D) -> RGB {
+    let color_vec = color_vec.clamp(0.0, 1.0);
+    RGB { r: color_vec.0, g: color_vec.1, b: color_vec.2}
 }

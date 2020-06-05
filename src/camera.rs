@@ -3,6 +3,8 @@ use crate::linalg::cross;
 
 use crate::geometry::Ray;
 
+use crate::colors::RGB;
+
 #[derive(Copy, Clone)]
 pub struct ImagePlane {
     pub origin: Vec3D,
