@@ -31,6 +31,18 @@ impl Vec3D {
         max += 1e-12;
         self.normalize(norm)
     }
+
+    pub fn random(min0: f64,
+                  max0: f64,
+                  min1: f64,
+                  max1: f64,
+                  min2: f64,
+                  max2: f64) -> Vec3D {
+        let mut rng = thread_rng();
+        Vec3D(rng.gen_range(min0, max0),
+              rng.gen_range(min1, max1),
+              rng.gen_range(min2, max2))
+    }
 }
 
 macro_rules! implement_binary_operation {
