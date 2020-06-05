@@ -50,6 +50,19 @@ fn reflected_bounce(intersection: &Intersection, intersectable: &Intersectable, 
         direction: -normal_perpendicular_component + normal_parallel_component,
     }
 }
+
+fn trace(ray: &Ray, world: &Vec<&Intersectable>, depth: u64) -> RGB {
+    // light enters the void if we hit the depth limit
+    if depth <= 0 {
+        return rgb(0.0, 0.0, 0.0);
+    }
+    // calculate intersection list
+    let mut intersections = Vec::new();
+    for intersectable in world {
+        intersections.push(intersectable.intersects(ray));
+    }
+    // determine if ray intersects and choose first intersection if so
+    let result = first_intersection(intersections, world);
     match result {
         // calculate color at intersection point
         // TODO(dip): calculate color using material color
