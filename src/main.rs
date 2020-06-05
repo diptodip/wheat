@@ -29,9 +29,18 @@ use camera::ImagePlane;
 use camera::fov_to_imsize;
 use camera::imsize_to_pixels;
 
-fn trace(ray: &Ray, intersectable: &Intersectable) -> RGB {
-    // determine if ray intersects
-    let result = intersectable.intersects(ray);
+mod materials;
+use materials::Material;
+use materials::Diffuse;
+
+fn diffuse_bounce(intersection: &Intersection,
+                  intersectable: &Intersectable) -> Ray {
+    let bounce_vector = intersection.local_normal + Sphere::random_unit_vector();
+    Ray {
+        origin: intersection.point,
+        direction: bounce_vector,
+    }
+}
     match result {
         // calculate color at intersection point
         // TODO(dip): implement recursion, for now only return color
