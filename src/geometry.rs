@@ -23,6 +23,7 @@ impl Ray {
 #[derive(Copy, Clone)]
 pub struct Intersection {
     pub point: Vec3D,
+    pub distance: f64,
     pub local_normal: Vec3D,
     pub inside: bool,
 }
