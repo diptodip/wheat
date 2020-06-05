@@ -31,11 +31,25 @@ pub struct Intersection {
 pub trait Intersects {
     fn intersects(&self, ray: &Ray) -> Option<Intersection>;
     fn surface_normal(&self, point: Vec3D) -> Vec3D;
+    fn material(&self) -> Material;
 }
 
 pub struct Sphere {
     pub origin: Vec3D,
     pub radius: f64,
+    pub material: Material,
+}
+
+impl Sphere {
+    pub fn random_unit_vector() -> Vec3D {
+        loop {
+            let point = Vec3D::random(-0.5, 0.5, -0.5, 0.5, -0.5, 0.5);
+            let norm_squared = point.length().powf(2.0);
+            if norm_squared < 1.0 {
+                return point.l2_normalize();
+            }
+        }
+    }
 }
 
 impl Intersects for Sphere {
