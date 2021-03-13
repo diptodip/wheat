@@ -1,4 +1,6 @@
 use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign, Neg};
+use std::f64::consts::PI;
+
 use rand::prelude::*;
 
 #[derive(Copy, Clone)]
@@ -7,8 +9,14 @@ pub struct Vec3D(pub f64, pub f64, pub f64);
 impl Vec3D {
     #[inline]
     pub fn length(self) -> f64 {
-        (self.0 * self.0 + self.1 * self.1 + self.2 * self.2).sqrt()
+        self.length_squared().sqrt()
     }
+
+    #[inline]
+    pub fn length_squared(self) -> f64 {
+        self.0 * self.0 + self.1 * self.1 + self.2 * self.2
+    }
+
     #[inline]
     fn normalize(self, norm: f64) -> Vec3D {
         Vec3D(self.0 / norm, self.1 / norm, self.2 / norm)
@@ -27,8 +35,8 @@ impl Vec3D {
         if self.2 > max {
             max = self.2
         }
-        let norm = max;
         max += 1e-12;
+        let norm = max;
         self.normalize(norm)
     }
 
@@ -38,10 +46,30 @@ impl Vec3D {
                   max1: f64,
                   min2: f64,
                   max2: f64) -> Vec3D {
-        let mut rng = thread_rng();
+        let mut rng = rand::thread_rng();
         Vec3D(rng.gen_range(min0, max0),
               rng.gen_range(min1, max1),
               rng.gen_range(min2, max2))
+    }
+
+    pub fn random_unit_vector() -> Vec3D {
+        loop {
+            let point = Vec3D::random(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+            let norm_squared = point.length_squared();
+            if norm_squared < 1.0 {
+                return point.l2_normalize();
+            }
+        }
+    }
+
+    pub fn random_unit_disk_vector() -> Vec3D {
+        loop {
+            let point = Vec3D::random(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+            let norm_squared = point.length_squared();
+            if norm_squared < 1.0 {
+                return point;
+            }
+        }
     }
 
     pub fn clamp(self, min: f64, max: f64) -> Vec3D {
