@@ -23,6 +23,11 @@ impl RGB {
     pub fn to_vec3d(self) -> Vec3D {
         Vec3D(self.r, self.g, self.b)
     }
+
+    pub fn random() -> RGB {
+        let color_vec = Vec3D::random(0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
+        vec_to_rgb(color_vec)
+    }
 }
 
 pub fn rgb(r: f64, g: f64, b: f64) -> RGB {
