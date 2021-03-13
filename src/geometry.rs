@@ -9,16 +9,7 @@ use crate::linalg::dot;
 
 use crate::materials::Material;
 
-pub struct Ray {
-    pub origin: Vec3D,
-    pub direction: Vec3D,
-}
-
-impl Ray {
-    pub fn at(&self, t:f64) -> Vec3D {
-        self.origin + t * self.direction
-    }
-}
+use crate::ray::Ray;
 
 #[derive(Copy, Clone)]
 pub struct Intersection {
@@ -40,29 +31,17 @@ pub struct Sphere {
     pub material: Material,
 }
 
-impl Sphere {
-    pub fn random_unit_vector() -> Vec3D {
-        loop {
-            let point = Vec3D::random(-0.5, 0.5, -0.5, 0.5, -0.5, 0.5);
-            let norm_squared = point.length().powf(2.0);
-            if norm_squared < 1.0 {
-                return point.l2_normalize();
-            }
-        }
-    }
-}
-
 impl Intersects for Sphere {
     fn surface_normal(&self, point: Vec3D) -> Vec3D {
-        (point - self.origin).l2_normalize()
+        (point - self.origin) / self.radius
     }
 
     fn intersects(&self, ray: &Ray) -> Option<Intersection> {
         // using quadratic formula
         let sphere_to_ray = ray.origin - self.origin;
-        let a = dot(&ray.direction, &ray.direction);
+        let a = ray.direction.length_squared();
         let h = dot(&sphere_to_ray, &ray.direction);
-        let c = dot(&sphere_to_ray, &sphere_to_ray) - self.radius * self.radius;
+        let c = sphere_to_ray.length_squared() - self.radius * self.radius;
         let discriminant = (h * h) - (a * c);
         if discriminant < 0.0 {
             return None;
@@ -70,10 +49,10 @@ impl Intersects for Sphere {
         let discriminant_sqrt = discriminant.sqrt();
         let t0 = (-h - discriminant_sqrt) / a;
         let t1 = (-h + discriminant_sqrt) / a;
-        if t0 < 0.01 && t1 < 0.01 {
+        if t0 < 1e-6 && t1 < 1e-6 {
             return None;
         }
-        let t = if t0 >= 0.01 { t0 }  else { t1 };
+        let t = if t0 >= 1e-6 { t0 }  else { t1 };
         let point = ray.at(t);
         let surface_normal = self.surface_normal(point);
         let mut inside = false;
@@ -121,11 +100,11 @@ impl Intersects for Intersectable {
 }
 
 pub fn first_intersection<'a>(intersections: Vec<Option<Intersection>>,
-                              intersectables: &'a Vec<&Intersectable>)
+                              intersectables: &'a Vec<Intersectable>)
                               -> Option<(Intersection, &'a Intersectable)> {
     let num_objects = intersectables.len() as usize;
     let mut closest_distance = INFINITY;
-    let mut closest_intersectable = intersectables[0];
+    let mut closest_intersectable = &intersectables[0];
     let mut closest_intersection = intersections[0];
     for i in 0..num_objects {
         let result = intersections[i];
@@ -133,7 +112,7 @@ pub fn first_intersection<'a>(intersections: Vec<Option<Intersection>>,
             Some(intersection) => {
                 if intersection.distance < closest_distance {
                     closest_distance = intersection.distance;
-                    closest_intersectable = intersectables[i];
+                    closest_intersectable = &intersectables[i];
                     closest_intersection = intersections[i];
                 }
             },
