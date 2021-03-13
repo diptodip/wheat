@@ -3,5 +3,7 @@
 cd ~/src/raytracer;
 cargo clean;
 rm -f spheres.ppm;
+rm -f spheres.png;
 time cargo run >> spheres.ppm;
-open spheres.ppm;
+convert spheres.ppm spheres.png
+open spheres.png;
