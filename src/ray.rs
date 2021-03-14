@@ -5,10 +5,16 @@ use crate::rand::prelude::*;
 use crate::linalg::Vec3D;
 use crate::linalg::dot;
 
+use crate::colors::RGB;
+use crate::colors::rgb;
+use crate::colors::vec_to_rgb;
+
 use crate::geometry::Intersects;
 use crate::geometry::Intersection;
 use crate::geometry::Intersectable;
+use crate::geometry::first_intersection;
 
+use crate::materials::Material;
 use crate::materials::Surface;
 
 pub struct Ray {
