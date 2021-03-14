@@ -6,4 +6,3 @@ rm -f spheres.ppm;
 rm -f spheres.png;
 time cargo run >> spheres.ppm;
 convert spheres.ppm spheres.png
-open spheres.png;
