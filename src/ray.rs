@@ -72,7 +72,7 @@ pub fn fuzzy_reflect(intersection: &Intersection,
 fn schlick(cos_theta: f64, index_ratio: f64) -> f64 {
     let mut r0 = (1.0 - index_ratio) / (1.0 + index_ratio);
     r0 = r0 * r0;
-    r0 * (1.0 - r0) * (1.0 - cos_theta).powf(5.0)
+    r0 + (1.0 - r0) * (1.0 - cos_theta).powf(5.0)
 }
 
 pub fn refract(intersection: &Intersection,
