@@ -132,9 +132,9 @@ fn test_spheres() {
                 // trace ray for current pixel
                 let color = trace(&ray, &world, 50);
                 // add observed color from trace to image at current pixel
-                image[row][col][0] += (color.r() / samples_per_pixel);
-                image[row][col][1] += (color.g() / samples_per_pixel);
-                image[row][col][2] += (color.b() / samples_per_pixel);
+                image[row][col][0] += (color.r / samples_per_pixel);
+                image[row][col][1] += (color.g / samples_per_pixel);
+                image[row][col][2] += (color.b / samples_per_pixel);
             }
         }
         eprintln!("[info] remaining scan lines: {}", rows - row - 1);
@@ -286,9 +286,9 @@ fn random_spheres() {
                 // trace ray for current pixel
                 let color = trace(&ray, &world, 50);
                 // add observed color from trace to image at current pixel
-                image[row][col][0] += (color.r() / samples_per_pixel);
-                image[row][col][1] += (color.g() / samples_per_pixel);
-                image[row][col][2] += (color.b() / samples_per_pixel);
+                image[row][col][0] += (color.r / samples_per_pixel);
+                image[row][col][1] += (color.g / samples_per_pixel);
+                image[row][col][2] += (color.b / samples_per_pixel);
             }
         }
         eprintln!("[info] remaining scan lines: {}", rows - row - 1);

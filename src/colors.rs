@@ -2,24 +2,12 @@ use crate::linalg::Vec3D;
 
 #[derive(Copy, Clone)]
 pub struct RGB {
-    r: f64,
-    g: f64,
-    b: f64,
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
 }
 
 impl RGB {
-    pub fn r(self) -> f64 {
-        return self.r;
-    }
-
-    pub fn g(self) -> f64 {
-        return self.g;
-    }
-
-    pub fn b(self) -> f64 {
-        return self.b;
-    }
-
     pub fn to_vec3d(self) -> Vec3D {
         Vec3D(self.r, self.g, self.b)
     }
