@@ -1,5 +1,5 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign, Neg};
 use std::f64::consts::PI;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use rand::prelude::*;
 
@@ -40,16 +40,13 @@ impl Vec3D {
         self.normalize(norm)
     }
 
-    pub fn random(min0: f64,
-                  max0: f64,
-                  min1: f64,
-                  max1: f64,
-                  min2: f64,
-                  max2: f64) -> Vec3D {
+    pub fn random(min0: f64, max0: f64, min1: f64, max1: f64, min2: f64, max2: f64) -> Vec3D {
         let mut rng = rand::thread_rng();
-        Vec3D(rng.gen_range(min0, max0),
-              rng.gen_range(min1, max1),
-              rng.gen_range(min2, max2))
+        Vec3D(
+            rng.gen_range(min0, max0),
+            rng.gen_range(min1, max1),
+            rng.gen_range(min2, max2),
+        )
     }
 
     pub fn random_unit_vector() -> Vec3D {
@@ -73,9 +70,11 @@ impl Vec3D {
     }
 
     pub fn clamp(self, min: f64, max: f64) -> Vec3D {
-        Vec3D(self.0.max(min).min(max),
-              self.1.max(min).min(max),
-              self.2.max(min).min(max))
+        Vec3D(
+            self.0.max(min).min(max),
+            self.1.max(min).min(max),
+            self.2.max(min).min(max),
+        )
     }
 }
 

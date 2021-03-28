@@ -1,4 +1,4 @@
-pub fn output_ppm(image: Vec<Vec<Vec<f64>>>, rows: usize, cols:usize) {
+pub fn output_ppm(image: Vec<Vec<Vec<f64>>>, rows: usize, cols: usize) {
     let rows = rows;
     let cols = cols;
     println!("P3");

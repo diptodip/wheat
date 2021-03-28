@@ -1,11 +1,11 @@
-use std::option::Option;
-use std::f64::INFINITY;
 use std::f64::consts::PI;
+use std::f64::INFINITY;
+use std::option::Option;
 
 use crate::rand::prelude::*;
 
-use crate::linalg::Vec3D;
 use crate::linalg::dot;
+use crate::linalg::Vec3D;
 
 use crate::materials::Material;
 
@@ -52,14 +52,18 @@ impl Intersects for Sphere {
         if t0 < 1e-6 && t1 < 1e-6 {
             return None;
         }
-        let t = if t0 >= 1e-6 { t0 }  else { t1 };
+        let t = if t0 >= 1e-6 { t0 } else { t1 };
         let point = ray.at(t);
         let surface_normal = self.surface_normal(point);
         let mut inside = false;
         if dot(&ray.direction, &surface_normal) > 0.0 {
             inside = true;
         }
-        let local_normal = if inside { -surface_normal } else { surface_normal };
+        let local_normal = if inside {
+            -surface_normal
+        } else {
+            surface_normal
+        };
         let distance = (point - ray.origin).length();
         let intersection = Intersection {
             point: point,
@@ -99,9 +103,10 @@ impl Intersects for Intersectable {
     }
 }
 
-pub fn first_intersection<'a>(intersections: Vec<Option<Intersection>>,
-                              intersectables: &'a Vec<Intersectable>)
-                              -> Option<(Intersection, &'a Intersectable)> {
+pub fn first_intersection<'a>(
+    intersections: Vec<Option<Intersection>>,
+    intersectables: &'a Vec<Intersectable>,
+) -> Option<(Intersection, &'a Intersectable)> {
     let num_objects = intersectables.len() as usize;
     let mut closest_distance = INFINITY;
     let mut closest_intersectable = &intersectables[0];
@@ -115,7 +120,7 @@ pub fn first_intersection<'a>(intersections: Vec<Option<Intersection>>,
                     closest_intersectable = &intersectables[i];
                     closest_intersection = intersections[i];
                 }
-            },
+            }
             None => {}
         }
     }

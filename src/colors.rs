@@ -32,10 +32,18 @@ impl RGB {
 
 pub fn rgb(r: f64, g: f64, b: f64) -> RGB {
     let color_vec = Vec3D(r, g, b).clamp(0.0, 1.0);
-    RGB { r: color_vec.0, g: color_vec.1, b: color_vec.2}
+    RGB {
+        r: color_vec.0,
+        g: color_vec.1,
+        b: color_vec.2,
+    }
 }
 
 pub fn vec_to_rgb(color_vec: Vec3D) -> RGB {
     let color_vec = color_vec.clamp(0.0, 1.0);
-    RGB { r: color_vec.0, g: color_vec.1, b: color_vec.2}
+    RGB {
+        r: color_vec.0,
+        g: color_vec.1,
+        b: color_vec.2,
+    }
 }
