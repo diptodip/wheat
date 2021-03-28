@@ -19,6 +19,17 @@ pub struct Intersection {
     pub inside: bool,
 }
 
+impl Default for Intersection {
+    fn default() -> Intersection {
+        Intersection {
+            point: Vec3D(0.0, 0.0, 0.0),
+            distance: 0.0,
+            local_normal: Vec3D(0.0, 0.0, 0.0),
+            inside: false,
+        }
+    }
+}
+
 pub trait Intersects {
     fn intersects(&self, ray: &Ray) -> Option<Intersection>;
     fn surface_normal(&self, point: Vec3D) -> Vec3D;
@@ -103,29 +114,33 @@ impl Intersects for Intersectable {
     }
 }
 
-pub fn first_intersection<'a>(
-    intersections: Vec<Option<Intersection>>,
-    intersectables: &'a Vec<Intersectable>,
-) -> Option<(Intersection, &'a Intersectable)> {
-    let num_objects = intersectables.len() as usize;
+pub fn find_intersections<'a, 'b>(
+    ray: &'a Ray,
+    world: &'b Vec<Intersectable>,
+) -> (Vec<Option<Intersection>>, Option<(Intersection, &'b Intersectable)>) {
+    // calculate intersection list
+    let mut intersections = Vec::new();
+    let num_objects = world.len() as usize;
     let mut closest_distance = INFINITY;
-    let mut closest_intersectable = &intersectables[0];
-    let mut closest_intersection = intersections[0];
+    let mut closest_intersectable = &world[0];
+    let mut closest_intersection = Intersection::default();
     for i in 0..num_objects {
-        let result = intersections[i];
+        let result = world[i].intersects(ray);
+        intersections.push(result);
         match result {
             Some(intersection) => {
                 if intersection.distance < closest_distance {
                     closest_distance = intersection.distance;
-                    closest_intersectable = &intersectables[i];
-                    closest_intersection = intersections[i];
+                    closest_intersectable = &world[i];
+                    closest_intersection = intersection;
                 }
             }
             None => {}
         }
     }
     if closest_distance == INFINITY {
-        return None;
+        (intersections, None)
+    } else {
+        (intersections, Some((closest_intersection, closest_intersectable)))
     }
-    Some((closest_intersection?, closest_intersectable))
 }
