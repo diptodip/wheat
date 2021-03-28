@@ -14,7 +14,7 @@ mod io;
 use io::output_ppm;
 
 mod geometry;
-use geometry::first_intersection;
+use geometry::find_intersections;
 use geometry::Intersectable;
 use geometry::Intersection;
 use geometry::Intersects;
