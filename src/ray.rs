@@ -9,7 +9,7 @@ use crate::colors::rgb;
 use crate::colors::vec_to_rgb;
 use crate::colors::RGB;
 
-use crate::geometry::first_intersection;
+use crate::geometry::find_intersections;
 use crate::geometry::Intersectable;
 use crate::geometry::Intersection;
 use crate::geometry::Intersects;
@@ -94,11 +94,11 @@ pub fn refract(intersection: &Intersection, intersectable: &Intersectable, ray: 
     if reflect_check < reflectivity {
         return reflect(intersection, intersectable, ray);
     }
-    let r2_par = index_ratio * (r1 + cos_theta1 * intersection.local_normal);
-    let r2_per = (-(1.0 - r2_par.length_squared()).sqrt() * intersection.local_normal);
+    let r2_per = index_ratio * (r1 + cos_theta1 * intersection.local_normal);
+    let r2_par = (-(1.0 - r2_per.length_squared()).sqrt() * intersection.local_normal);
     Ray {
         origin: intersection.point,
-        direction: r2_par + r2_per,
+        direction: r2_per + r2_par,
     }
 }
 
@@ -107,13 +107,8 @@ pub fn trace(ray: &Ray, world: &Vec<Intersectable>, depth: u64) -> RGB {
     if depth <= 0 {
         return rgb(0.0, 0.0, 0.0);
     }
-    // calculate intersection list
-    let mut intersections = Vec::new();
-    for intersectable in world {
-        intersections.push(intersectable.intersects(ray));
-    }
     // determine if ray intersects and choose first intersection if so
-    let result = first_intersection(intersections, world);
+    let (intersections, result) = find_intersections(ray, world);
     match result {
         // calculate color at intersection point
         Some((intersection, intersectable)) => {
@@ -155,7 +150,7 @@ pub fn trace(ray: &Ray, world: &Vec<Intersectable>, depth: u64) -> RGB {
             return rgb(
                 (1.0 - height) + height * 0.5,
                 (1.0 - height) + height * 0.7,
-                (1.0 - height) + height * 1.0,
+                1.0,
             );
         }
     }
