@@ -119,8 +119,8 @@ pub fn find_intersections<'a, 'b>(
     world: &'b Vec<Intersectable>,
 ) -> (Vec<Option<Intersection>>, Option<(Intersection, &'b Intersectable)>) {
     // calculate intersection list
-    let mut intersections = Vec::new();
     let num_objects = world.len() as usize;
+    let mut intersections = Vec::with_capacity(num_objects);
     let mut closest_distance = INFINITY;
     let mut closest_intersectable = &world[0];
     let mut closest_intersection = Intersection::default();
