@@ -21,6 +21,7 @@ use crate::camera::Camera;
 use crate::materials::Material;
 use crate::materials::Surface;
 
+use rayon::current_num_threads;
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -166,9 +167,10 @@ fn trace(ray: &Ray, world: &Vec<Intersectable>, depth: u64) -> RGB {
 pub fn render(world: &Vec<Intersectable>, camera: &Camera, rows: usize, cols: usize, samples_per_pixel: f64) {
     // construct blank image
     let mut image = vec![vec![0.0; 3]; rows * cols];
+    let num_threads = current_num_threads();
     eprintln!(
-        "[start] rendering {}px x {}px (width x height)...",
-        cols, rows
+        "[start] rendering {}px x {}px (width x height) on {} threads",
+        cols, rows, num_threads
     );
     eprintln!("[info] {:.2}%", 0.0);
     // need an atomic counter so rust doesn't complain about thread safety
