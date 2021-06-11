@@ -59,8 +59,6 @@ fn test_spheres() {
     };
     let rows = rows as usize;
     let cols = cols as usize;
-    // construct blank image
-    let mut image = vec![vec![vec![0.0; 3]; cols]; rows];
     // initialize list of objects, aka the world
     let mut world = Vec::new();
     // construct ground sphere in scene
@@ -110,38 +108,7 @@ fn test_spheres() {
     world.push(small_glass_sphere);
     world.push(big_diffuse_sphere);
     world.push(big_reflective_sphere);
-    // loop over pixels and create rays
-    let mut rng = rand::thread_rng();
-    eprintln!(
-        "[start] processing {}px x {}px (width x height)...",
-        cols, rows
-    );
-    eprintln!("[info] remaining scan lines: {}", rows);
-    let samples_per_pixel = 100.0;
-    for row in 0..rows {
-        for col in 0..cols {
-            for sample in 0..samples_per_pixel as usize {
-                // calculate ray for current pixel
-                // making sure to center ray within pixel
-                // we also perturb the ray direction slightly per sample
-                let row_rand = rng.gen::<f64>();
-                let col_rand = rng.gen::<f64>();
-                let row_frac = (row as f64 + 0.5 + row_rand) / (rows as f64);
-                let col_frac = (col as f64 + 0.5 + col_rand) / (cols as f64);
-                let ray = camera.prime_ray(row_frac, col_frac);
-                // trace ray for current pixel
-                let color = trace(&ray, &world, 50);
-                // add observed color from trace to image at current pixel
-                image[row][col][0] += (color.r / samples_per_pixel);
-                image[row][col][1] += (color.g / samples_per_pixel);
-                image[row][col][2] += (color.b / samples_per_pixel);
-            }
-        }
-        eprintln!("[info] remaining scan lines: {}", rows - row - 1);
-    }
-    eprintln!("[info] saving image...");
-    output_ppm(image, rows, cols);
-    eprintln!("[ok] done!");
+    render(&world, &camera, rows, cols, 100.0);
 }
 
 fn random_spheres() {
@@ -171,8 +138,6 @@ fn random_spheres() {
     };
     let rows = rows as usize;
     let cols = cols as usize;
-    // construct blank image
-    let mut image = vec![vec![vec![0.0; 3]; cols]; rows];
     // initialize list of objects, aka the world
     let mut world = Vec::new();
     // construct ground sphere in scene
@@ -265,37 +230,7 @@ fn random_spheres() {
     world.push(big_glass_sphere);
     world.push(big_diffuse_sphere);
     world.push(big_reflective_sphere);
-    // loop over pixels and create rays
-    eprintln!(
-        "[start] processing {}px x {}px (width x height)...",
-        cols, rows
-    );
-    eprintln!("[info] remaining scan lines: {}", rows);
-    let samples_per_pixel = 100.0;
-    for row in 0..rows {
-        for col in 0..cols {
-            for sample in 0..samples_per_pixel as usize {
-                // calculate ray for current pixel
-                // making sure to center ray within pixel
-                // we also perturb the ray direction slightly per sample
-                let row_rand = rng.gen::<f64>();
-                let col_rand = rng.gen::<f64>();
-                let row_frac = (row as f64 + 0.5 + row_rand) / (rows as f64);
-                let col_frac = (col as f64 + 0.5 + col_rand) / (cols as f64);
-                let ray = camera.prime_ray(row_frac, col_frac);
-                // trace ray for current pixel
-                let color = trace(&ray, &world, 50);
-                // add observed color from trace to image at current pixel
-                image[row][col][0] += (color.r / samples_per_pixel);
-                image[row][col][1] += (color.g / samples_per_pixel);
-                image[row][col][2] += (color.b / samples_per_pixel);
-            }
-        }
-        eprintln!("[info] remaining scan lines: {}", rows - row - 1);
-    }
-    eprintln!("[info] saving image...");
-    output_ppm(image, rows, cols);
-    eprintln!("[ok] done!");
+    render(&world, &camera, rows, cols, 100.0);
 }
 
 fn main() {
