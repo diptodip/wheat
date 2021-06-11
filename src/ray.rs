@@ -166,12 +166,13 @@ pub fn trace(ray: &Ray, world: &Vec<Intersectable>, depth: u64) -> RGB {
 pub fn render(world: &Vec<Intersectable>, camera: &Camera, rows: usize, cols: usize, samples_per_pixel: f64) {
     // construct blank image
     let mut image = vec![vec![0.0; 3]; rows * cols];
-    // loop over pixels and create rays
     eprintln!(
         "[start] processing {}px x {}px (width x height)...",
         cols, rows
     );
+    // need an atomic counter so rust doesn't complain about thread safety
     let mut completed_rows = AtomicUsize::new(0);
+    // iterate through pixels in parallel
     eprintln!("[info] remaining scan lines: {}", rows);
     image.par_iter_mut().enumerate().for_each(|(i, pixel)| {
         // create RNG
@@ -180,9 +181,9 @@ pub fn render(world: &Vec<Intersectable>, camera: &Camera, rows: usize, cols: us
         let row = i / cols;
         let col = i % cols;
         if (col == (cols - 1)) {
+            // have to use atomic counter updating functions here
             completed_rows.store(completed_rows.load(Ordering::Relaxed) + 1 as usize, Ordering::Relaxed);
             eprintln!("[info] {:.2}%", completed_rows.load(Ordering::Relaxed) as f64 / rows as f64 * 100.0);
-            // eprintln!("[info] scanning row: {}/{}", row + 1, rows);
         }
         let mut r: f64 = 0.0;
         let mut g: f64 = 0.0;
