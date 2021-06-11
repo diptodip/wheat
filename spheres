@@ -1,9 +1,5 @@
 #!/bin/bash
 
-cd ~/src/raytracer;
 cargo clean;
-rm -f spheres.ppm;
-rm -f spheres.png;
-time cargo build --release;
-time cargo run --release >> spheres.ppm;
-convert spheres.ppm spheres.png
+cargo build --release;
+cargo run --release;
