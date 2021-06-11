@@ -9,7 +9,7 @@ use crate::colors::rgb;
 use crate::colors::vec_to_rgb;
 use crate::colors::RGB;
 
-use crate::io::output_ppm;
+use crate::io::write_ppm;
 
 use crate::geometry::find_intersections;
 use crate::geometry::Intersectable;
@@ -35,7 +35,7 @@ impl Ray {
     }
 }
 
-pub fn diffuse_bounce(intersection: &Intersection, intersectable: &Intersectable) -> Ray {
+fn diffuse_bounce(intersection: &Intersection, intersectable: &Intersectable) -> Ray {
     let bounce_vector = intersection.local_normal + Vec3D::random_unit_vector();
     Ray {
         origin: intersection.point,
@@ -43,7 +43,7 @@ pub fn diffuse_bounce(intersection: &Intersection, intersectable: &Intersectable
     }
 }
 
-pub fn reflect(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray) -> Ray {
+fn reflect(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray) -> Ray {
     let direction = ray.direction;
     let normal = intersection.local_normal;
     let reflected = direction - 2.0 * dot(&direction, &normal) * normal;
@@ -53,7 +53,7 @@ pub fn reflect(intersection: &Intersection, intersectable: &Intersectable, ray: 
     }
 }
 
-pub fn fuzzy_reflect(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray) -> Ray {
+fn fuzzy_reflect(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray) -> Ray {
     let direction = ray.direction;
     let normal = intersection.local_normal;
     let reflected = direction - 2.0 * dot(&direction, &normal) * normal;
@@ -77,7 +77,7 @@ fn schlick(cos_theta: f64, index_ratio: f64) -> f64 {
     r0 + (1.0 - r0) * (1.0 - cos_theta).powf(5.0)
 }
 
-pub fn refract(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray) -> Ray {
+fn refract(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray) -> Ray {
     let mut material_index = 1.0;
     let material = intersectable.material();
     let surface = material.surface;
@@ -109,7 +109,7 @@ pub fn refract(intersection: &Intersection, intersectable: &Intersectable, ray: 
     }
 }
 
-pub fn trace(ray: &Ray, world: &Vec<Intersectable>, depth: u64) -> RGB {
+fn trace(ray: &Ray, world: &Vec<Intersectable>, depth: u64) -> RGB {
     // light enters the void if we hit the depth limit
     if depth <= 0 {
         return rgb(0.0, 0.0, 0.0);
@@ -167,13 +167,13 @@ pub fn render(world: &Vec<Intersectable>, camera: &Camera, rows: usize, cols: us
     // construct blank image
     let mut image = vec![vec![0.0; 3]; rows * cols];
     eprintln!(
-        "[start] processing {}px x {}px (width x height)...",
+        "[start] rendering {}px x {}px (width x height)...",
         cols, rows
     );
+    eprintln!("[info] {:.2}%", 0.0);
     // need an atomic counter so rust doesn't complain about thread safety
     let mut completed_rows = AtomicUsize::new(0);
     // iterate through pixels in parallel
-    eprintln!("[info] remaining scan lines: {}", rows);
     image.par_iter_mut().enumerate().for_each(|(i, pixel)| {
         // create RNG
         let mut rng = rand::thread_rng();
@@ -207,7 +207,7 @@ pub fn render(world: &Vec<Intersectable>, camera: &Camera, rows: usize, cols: us
         pixel[1] = g;
         pixel[2] = b;
     });
-    eprintln!("[info] saving image...");
-    output_ppm(image, rows, cols);
+    eprintln!("[info] writing image...");
+    write_ppm(image, rows, cols);
     eprintln!("[ok] done!");
 }
