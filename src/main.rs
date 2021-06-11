@@ -1,4 +1,6 @@
 extern crate rand;
+use std::time::Instant;
+
 use rand::prelude::*;
 
 mod linalg;
@@ -11,7 +13,7 @@ use colors::vec_to_rgb;
 use colors::RGB;
 
 mod io;
-use io::output_ppm;
+use io::write_ppm;
 
 mod geometry;
 use geometry::find_intersections;
@@ -234,5 +236,8 @@ fn random_spheres() {
 }
 
 fn main() {
+    let start = Instant::now();
     random_spheres();
+    let end = start.elapsed();
+    println!("[info] scene rendered in {:.2?}", end);
 }
