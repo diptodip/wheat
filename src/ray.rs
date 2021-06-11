@@ -9,13 +9,20 @@ use crate::colors::rgb;
 use crate::colors::vec_to_rgb;
 use crate::colors::RGB;
 
+use crate::io::output_ppm;
+
 use crate::geometry::find_intersections;
 use crate::geometry::Intersectable;
 use crate::geometry::Intersection;
 use crate::geometry::Intersects;
 
+use crate::camera::Camera;
+
 use crate::materials::Material;
 use crate::materials::Surface;
+
+use rayon::prelude::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct Ray {
     pub origin: Vec3D,
@@ -154,4 +161,52 @@ pub fn trace(ray: &Ray, world: &Vec<Intersectable>, depth: u64) -> RGB {
             );
         }
     }
+}
+
+pub fn render(world: &Vec<Intersectable>, camera: &Camera, rows: usize, cols: usize, samples_per_pixel: f64) {
+    // construct blank image
+    let mut image = vec![vec![0.0; 3]; rows * cols];
+    // loop over pixels and create rays
+    eprintln!(
+        "[start] processing {}px x {}px (width x height)...",
+        cols, rows
+    );
+    let mut completed_rows = AtomicUsize::new(0);
+    eprintln!("[info] remaining scan lines: {}", rows);
+    image.par_iter_mut().enumerate().for_each(|(i, pixel)| {
+        // create RNG
+        let mut rng = rand::thread_rng();
+        // figure out row and column from index
+        let row = i / cols;
+        let col = i % cols;
+        if (col == (cols - 1)) {
+            completed_rows.store(completed_rows.load(Ordering::Relaxed) + 1 as usize, Ordering::Relaxed);
+            eprintln!("[info] {:.2}%", completed_rows.load(Ordering::Relaxed) as f64 / rows as f64 * 100.0);
+            // eprintln!("[info] scanning row: {}/{}", row + 1, rows);
+        }
+        let mut r: f64 = 0.0;
+        let mut g: f64 = 0.0;
+        let mut b: f64 = 0.0;
+        for sample in 0..samples_per_pixel as usize {
+            // calculate ray for current pixel
+            // making sure to center ray within pixel
+            // we also perturb the ray direction slightly per sample
+            let row_rand = rng.gen::<f64>();
+            let col_rand = rng.gen::<f64>();
+            let row_frac = (row as f64 + 0.5 + row_rand) / (rows as f64);
+            let col_frac = (col as f64 + 0.5 + col_rand) / (cols as f64);
+            let ray = camera.prime_ray(row_frac, col_frac);
+            // trace ray for current pixel
+            let color = trace(&ray, world, 50);
+            r += color.r / samples_per_pixel;
+            g += color.g / samples_per_pixel;
+            b += color.b / samples_per_pixel;
+        }
+        pixel[0] = r;
+        pixel[1] = g;
+        pixel[2] = b;
+    });
+    eprintln!("[info] saving image...");
+    output_ppm(image, rows, cols);
+    eprintln!("[ok] done!");
 }
