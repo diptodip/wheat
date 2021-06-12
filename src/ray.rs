@@ -176,38 +176,42 @@ pub fn render(world: &Vec<Intersectable>, camera: &Camera, rows: usize, cols: us
     // need an atomic counter so rust doesn't complain about thread safety
     let mut completed_rows = AtomicUsize::new(0);
     // iterate through pixels in parallel
-    image.par_iter_mut().enumerate().for_each(|(i, pixel)| {
+    image.par_chunks_mut(cols).enumerate().for_each(|(row, chunk)| {
         // create RNG
         let mut rng = rand::thread_rng();
-        // figure out row and column from index
-        let row = i / cols;
-        let col = i % cols;
-        if (col == (cols - 1)) {
-            // have to use atomic counter updating functions here
-            completed_rows.store(completed_rows.load(Ordering::Relaxed) + 1 as usize, Ordering::Relaxed);
-            eprintln!("[info] {:.2}%", completed_rows.load(Ordering::Relaxed) as f64 / rows as f64 * 100.0);
+        // loop through columns in row
+        for col in 0..cols {
+            if (col == (cols - 1)) {
+                // have to use atomic counter updating functions here
+                completed_rows.store(completed_rows.load(Ordering::Relaxed) + 1 as usize, Ordering::Relaxed);
+                eprintln!("[info] {:.2}%", completed_rows.load(Ordering::Relaxed) as f64 / rows as f64 * 100.0);
+            }
+            let mut r: f64 = 0.0;
+            let mut g: f64 = 0.0;
+            let mut b: f64 = 0.0;
+            for sample in 0..samples_per_pixel as usize {
+                // calculate ray for current pixel
+                // making sure to center ray within pixel
+                // we also perturb the ray direction slightly per sample
+                let row_rand = rng.gen::<f64>();
+                let col_rand = rng.gen::<f64>();
+                let row_frac = (row as f64 + 0.5 + row_rand) / (rows as f64);
+                let col_frac = (col as f64 + 0.5 + col_rand) / (cols as f64);
+                let ray = camera.prime_ray(row_frac, col_frac);
+                // trace ray for current pixel
+                let color = trace(&ray, world, 50);
+                r += color.r;
+                g += color.g;
+                b += color.b;
+            }
+            r /= samples_per_pixel;
+            g /= samples_per_pixel;
+            b /= samples_per_pixel;
+            let mut pixel = &mut chunk[col];
+            pixel[0] = r;
+            pixel[1] = g;
+            pixel[2] = b;
         }
-        let mut r: f64 = 0.0;
-        let mut g: f64 = 0.0;
-        let mut b: f64 = 0.0;
-        for sample in 0..samples_per_pixel as usize {
-            // calculate ray for current pixel
-            // making sure to center ray within pixel
-            // we also perturb the ray direction slightly per sample
-            let row_rand = rng.gen::<f64>();
-            let col_rand = rng.gen::<f64>();
-            let row_frac = (row as f64 + 0.5 + row_rand) / (rows as f64);
-            let col_frac = (col as f64 + 0.5 + col_rand) / (cols as f64);
-            let ray = camera.prime_ray(row_frac, col_frac);
-            // trace ray for current pixel
-            let color = trace(&ray, world, 50);
-            r += color.r / samples_per_pixel;
-            g += color.g / samples_per_pixel;
-            b += color.b / samples_per_pixel;
-        }
-        pixel[0] = r;
-        pixel[1] = g;
-        pixel[2] = b;
     });
     eprintln!("[info] writing image...");
     write_ppm(image, rows, cols);
