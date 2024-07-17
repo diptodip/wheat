@@ -11,5 +11,6 @@ pub enum Surface {
 #[derive(Copy, Clone)]
 pub struct Material {
     pub color: RGB,
+    pub emit: RGB,
     pub surface: Surface,
 }

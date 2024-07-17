@@ -35,11 +35,7 @@ impl Ray {
     }
 }
 
-fn diffuse_bounce(
-    rng: &mut ThreadRng,
-    intersection: &Intersection,
-    intersectable: &Intersectable,
-) -> Ray {
+fn diffuse_bounce(rng: &mut ThreadRng, intersection: &Intersection) -> Ray {
     let bounce_vector = intersection.local_normal + Vec3D::random_unit_vector(rng);
     Ray {
         origin: intersection.point,
@@ -47,7 +43,7 @@ fn diffuse_bounce(
     }
 }
 
-fn reflect(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray) -> Ray {
+fn reflect(intersection: &Intersection, ray: &Ray) -> Ray {
     let direction = ray.direction;
     let normal = intersection.local_normal;
     let reflected = direction - 2.0 * dot(&direction, &normal) * normal;
@@ -107,13 +103,13 @@ fn refract(
     let cos_theta1 = dot(&(-r1), &intersection.local_normal).min(1.0);
     let sin_theta1 = (1.0 - cos_theta1 * cos_theta1).sqrt();
     if (index_ratio * sin_theta1) > 1.0 {
-        return reflect(intersection, intersectable, ray);
+        return reflect(intersection, ray);
     }
     let reflectivity = schlick(cos_theta1, index_ratio);
     // let mut rng = rand::thread_rng();
     let reflect_check: f32 = rng.gen();
     if reflect_check < reflectivity {
-        return reflect(intersection, intersectable, ray);
+        return reflect(intersection, ray);
     }
     let r2_per = index_ratio * (r1 + cos_theta1 * intersection.local_normal);
     let r2_par = (-(1.0 - r2_per.length_squared()).sqrt() * intersection.local_normal);
@@ -125,69 +121,53 @@ fn refract(
 
 fn trace(
     rng: &mut ThreadRng,
-    ray: &Ray,
+    background: RGB,
+    ray: Ray,
     world: &Vec<Intersectable>,
     depth: u64,
     num_traced: &mut u64,
 ) -> RGB {
-    // light enters the void if we hit the depth limit
-    if depth <= 0 {
-        return rgb(0.0, 0.0, 0.0);
-    }
-    *num_traced += 1;
-    // determine if ray intersects and choose first intersection if so
-    // let (intersections, result) = find_intersections(ray, world);
-    let result = find_intersections(ray, world);
-    match result {
-        // calculate color at intersection point
-        Some((intersection, intersectable)) => {
-            let material = intersectable.material();
-            let surface = material.surface;
-            let material_color = material.color.to_vec3d();
-            let mut traced_color = Vec3D(0.0, 0.0, 0.0);
-            if let Surface::Diffuse = surface {
-                // light bounces randomly if material is diffuse,
-                // so we recurse and trace a randomly bounced ray
-                let bounced = &diffuse_bounce(rng, &intersection, intersectable);
-                traced_color = trace(rng, bounced, world, depth - 1, num_traced).to_vec3d();
-            } else if let Surface::Reflective = surface {
-                // light is reflected if material is totally reflective,
-                // so we recurse and trace a reflected ray
-                let reflected = &reflect(&intersection, intersectable, ray);
-                traced_color = trace(rng, reflected, world, depth - 1, num_traced).to_vec3d();
-            } else if let Surface::FuzzyReflective(_fuzz) = surface {
-                // light is reflected with some random offset
-                // if material is fuzzy reflective,
-                // so we recurse and trace a fuzzy reflected ray
-                // with a check to make sure the reflection is correct
-                let reflected = &fuzzy_reflect(rng, &intersection, intersectable, ray);
-                if dot(&reflected.direction, &intersection.local_normal) > 0.0 {
-                    traced_color = trace(rng, reflected, world, depth - 1, num_traced).to_vec3d();
+    let background = background.to_vec3d();
+    let mut color = Vec3D(0.0, 0.0, 0.0);
+    let mut attenuation = Vec3D(1.0, 1.0, 1.0);
+    let mut ray = ray;
+    for _ in 0..depth {
+        *num_traced += 1;
+        // determine if ray intersects and choose first intersection if so
+        let hit = find_intersections(&ray, world);
+        match hit {
+            // calculate color at intersection point
+            Some((intersection, intersectable)) => {
+                let material = intersectable.material();
+                let surface = material.surface;
+                let material_color = material.color.to_vec3d();
+                let material_emit = material.emit.to_vec3d();
+                color += attenuation * material_emit;
+                attenuation *= material_color;
+                match surface {
+                    Surface::Diffuse => ray = diffuse_bounce(rng, &intersection),
+                    Surface::Reflective => ray = reflect(&intersection, &ray),
+                    Surface::FuzzyReflective(_fuzz) => {
+                        ray = fuzzy_reflect(rng, &intersection, intersectable, &ray)
+                    }
+                    Surface::Refractive(_r) => {
+                        ray = refract(rng, &intersection, intersectable, &ray)
+                    }
                 }
-            } else if let Surface::Refractive(_r) = surface {
-                // light is refracted or reflected depending on angle,
-                // so we recurse to trace either a refracted/reflected ray
-                let refracted = &refract(rng, &intersection, intersectable, ray);
-                traced_color = trace(rng, refracted, world, depth - 1, num_traced).to_vec3d();
             }
-            let color_vec = material_color * traced_color;
-            return vec_to_rgb(color_vec);
-        }
-        None => {
-            let ray_direction = ray.direction.l2_normalize();
-            let height = 0.5 * (ray_direction.1 + 1.0);
-            return rgb(
-                (1.0 - height) + height * 0.5,
-                (1.0 - height) + height * 0.7,
-                1.0,
-            );
+            None => {
+                color += attenuation * background;
+                return vec_to_rgb(color);
+            }
         }
     }
+    return vec_to_rgb(color);
 }
 
 pub fn render(
     world: &Vec<Intersectable>,
     camera: &Camera,
+    background: RGB,
     rows: usize,
     cols: usize,
     samples_per_pixel: f32,
@@ -224,7 +204,7 @@ pub fn render(
                     let col_frac = (col as f32 + 0.5 + col_rand) / (cols as f32);
                     let ray = camera.prime_ray(&mut rng, row_frac, col_frac);
                     // trace ray for current pixel
-                    let color = trace(&mut rng, &ray, world, 50, &mut num_traced);
+                    let color = trace(&mut rng, background, ray, world, 50, &mut num_traced);
                     r += color.r;
                     g += color.g;
                     b += color.b;

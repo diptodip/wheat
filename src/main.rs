@@ -60,6 +60,7 @@ fn test_spheres() {
     };
     let rows = rows as usize;
     let cols = cols as usize;
+    let background = rgb(0.5, 0.7, 1.0);
     // initialize list of objects, aka the world
     let mut world = Vec::new();
     // construct ground sphere in scene
@@ -68,6 +69,7 @@ fn test_spheres() {
         radius: 100.0,
         material: Material {
             color: rgb(0.8, 0.8, 0.0),
+            emit: rgb(0.0, 0.0, 0.0),
             surface: Surface::Diffuse,
         },
     });
@@ -78,6 +80,7 @@ fn test_spheres() {
         radius: 0.5,
         material: Material {
             color: rgb(1.0, 1.0, 1.0),
+            emit: rgb(0.0, 0.0, 0.0),
             surface: Surface::Refractive(1.5),
         },
     });
@@ -86,6 +89,7 @@ fn test_spheres() {
         radius: -0.4,
         material: Material {
             color: rgb(1.0, 1.0, 1.0),
+            emit: rgb(0.0, 0.0, 0.0),
             surface: Surface::Refractive(1.5),
         },
     });
@@ -94,6 +98,7 @@ fn test_spheres() {
         radius: 0.5,
         material: Material {
             color: rgb(0.1, 0.2, 0.5),
+            emit: rgb(0.0, 0.0, 0.0),
             surface: Surface::Diffuse,
         },
     });
@@ -102,6 +107,7 @@ fn test_spheres() {
         radius: 0.5,
         material: Material {
             color: rgb(0.8, 0.6, 0.2),
+            emit: rgb(0.0, 0.0, 0.0),
             surface: Surface::FuzzyReflective(0.3),
         },
     });
@@ -109,7 +115,7 @@ fn test_spheres() {
     world.push(small_glass_sphere);
     world.push(big_diffuse_sphere);
     world.push(big_reflective_sphere);
-    render(&world, &camera, rows, cols, 100.0);
+    render(&world, &camera, background, rows, cols, 100.0);
 }
 
 fn random_spheres() {
@@ -139,6 +145,7 @@ fn random_spheres() {
     };
     let rows = rows as usize;
     let cols = cols as usize;
+    let background = rgb(0.5, 0.7, 1.0);
     // initialize list of objects, aka the world
     let mut world = Vec::new();
     // construct ground sphere in scene
@@ -147,6 +154,7 @@ fn random_spheres() {
         radius: 1000.0,
         material: Material {
             color: rgb(0.5, 0.5, 0.5),
+            emit: rgb(0.0, 0.0, 0.0),
             surface: Surface::Diffuse,
         },
     });
@@ -170,6 +178,7 @@ fn random_spheres() {
                         radius: 0.2,
                         material: Material {
                             color: color,
+                            emit: rgb(0.0, 0.0, 0.0),
                             surface: Surface::Diffuse,
                         },
                     });
@@ -183,6 +192,7 @@ fn random_spheres() {
                         radius: 0.2,
                         material: Material {
                             color: color,
+                            emit: rgb(0.0, 0.0, 0.0),
                             surface: Surface::FuzzyReflective(fuzz),
                         },
                     });
@@ -195,6 +205,7 @@ fn random_spheres() {
                         radius: 0.2,
                         material: Material {
                             color: color,
+                            emit: rgb(0.0, 0.0, 0.0),
                             surface: Surface::Refractive(1.5),
                         },
                     });
@@ -209,6 +220,7 @@ fn random_spheres() {
         radius: 1.0,
         material: Material {
             color: rgb(1.0, 1.0, 1.0),
+            emit: rgb(0.0, 0.0, 0.0),
             surface: Surface::Refractive(1.5),
         },
     });
@@ -217,6 +229,7 @@ fn random_spheres() {
         radius: 1.0,
         material: Material {
             color: rgb(0.4, 0.2, 0.1),
+            emit: rgb(0.0, 0.0, 0.0),
             surface: Surface::Diffuse,
         },
     });
@@ -225,13 +238,14 @@ fn random_spheres() {
         radius: 1.0,
         material: Material {
             color: rgb(0.7, 0.6, 0.5),
+            emit: rgb(0.0, 0.0, 0.0),
             surface: Surface::Reflective,
         },
     });
     world.push(big_glass_sphere);
     world.push(big_diffuse_sphere);
     world.push(big_reflective_sphere);
-    render(&world, &camera, rows, cols, 100.0);
+    render(&world, &camera, background, rows, cols, 100.0);
 }
 
 fn main() {
