@@ -1,4 +1,3 @@
-use std::f32::consts::PI;
 use std::time::Instant;
 
 use crate::rand::prelude::*;
@@ -19,7 +18,6 @@ use crate::geometry::Intersects;
 
 use crate::camera::Camera;
 
-use crate::materials::Material;
 use crate::materials::Surface;
 
 use rayon::current_num_threads;
@@ -130,13 +128,13 @@ fn trace(
     ray: &Ray,
     world: &Vec<Intersectable>,
     depth: u64,
-    num_casted: &mut u64,
+    num_traced: &mut u64,
 ) -> RGB {
     // light enters the void if we hit the depth limit
     if depth <= 0 {
         return rgb(0.0, 0.0, 0.0);
     }
-    *num_casted += 1;
+    *num_traced += 1;
     // determine if ray intersects and choose first intersection if so
     // let (intersections, result) = find_intersections(ray, world);
     let result = find_intersections(ray, world);
@@ -151,12 +149,12 @@ fn trace(
                 // light bounces randomly if material is diffuse,
                 // so we recurse and trace a randomly bounced ray
                 let bounced = &diffuse_bounce(rng, &intersection, intersectable);
-                traced_color = trace(rng, bounced, world, depth - 1, num_casted).to_vec3d();
+                traced_color = trace(rng, bounced, world, depth - 1, num_traced).to_vec3d();
             } else if let Surface::Reflective = surface {
                 // light is reflected if material is totally reflective,
                 // so we recurse and trace a reflected ray
                 let reflected = &reflect(&intersection, intersectable, ray);
-                traced_color = trace(rng, reflected, world, depth - 1, num_casted).to_vec3d();
+                traced_color = trace(rng, reflected, world, depth - 1, num_traced).to_vec3d();
             } else if let Surface::FuzzyReflective(_fuzz) = surface {
                 // light is reflected with some random offset
                 // if material is fuzzy reflective,
@@ -164,13 +162,13 @@ fn trace(
                 // with a check to make sure the reflection is correct
                 let reflected = &fuzzy_reflect(rng, &intersection, intersectable, ray);
                 if dot(&reflected.direction, &intersection.local_normal) > 0.0 {
-                    traced_color = trace(rng, reflected, world, depth - 1, num_casted).to_vec3d();
+                    traced_color = trace(rng, reflected, world, depth - 1, num_traced).to_vec3d();
                 }
             } else if let Surface::Refractive(_r) = surface {
                 // light is refracted or reflected depending on angle,
                 // so we recurse to trace either a refracted/reflected ray
                 let refracted = &refract(rng, &intersection, intersectable, ray);
-                traced_color = trace(rng, refracted, world, depth - 1, num_casted).to_vec3d();
+                traced_color = trace(rng, refracted, world, depth - 1, num_traced).to_vec3d();
             }
             let color_vec = material_color * traced_color;
             return vec_to_rgb(color_vec);
@@ -195,16 +193,13 @@ pub fn render(
     samples_per_pixel: f32,
 ) -> u64 {
     // construct blank image
-    let mut image = vec![vec![0.0; 3]; rows * cols];
+    let mut image: Vec<Vec<f32>> = vec![vec![0.0; 3]; rows * cols];
     let num_threads = current_num_threads();
-    eprintln!(
-        "[start] rendering {}px x {}px (width x height) on {} threads",
-        cols, rows, num_threads
-    );
+    eprintln!("[start] rendering {}px x {}px (width x height)", cols, rows);
     eprintln!("[info] {:.2}%", 0.0);
     // need an atomic counter so rust doesn't complain about thread safety
     let completed_rows = AtomicUsize::new(0);
-    let num_rays: u64 = 0;
+    let num_traced_total = AtomicUsize::new(0);
     // iterate through pixels in parallel
     let start = Instant::now();
     image
@@ -216,17 +211,6 @@ pub fn render(
             let mut num_traced = 0;
             // loop through columns in row
             for col in 0..cols {
-                if (col == (cols - 1)) {
-                    // have to use atomic counter updating functions here
-                    completed_rows.store(
-                        completed_rows.load(Ordering::Relaxed) + 1 as usize,
-                        Ordering::Relaxed,
-                    );
-                    eprintln!(
-                        "[info] {:.2}%",
-                        completed_rows.load(Ordering::Relaxed) as f32 / rows as f32 * 100.0
-                    );
-                }
                 let mut r: f32 = 0.0;
                 let mut g: f32 = 0.0;
                 let mut b: f32 = 0.0;
@@ -253,11 +237,39 @@ pub fn render(
                 pixel[1] = g;
                 pixel[2] = b;
             }
+            // have to use atomic counter updating functions here
+            num_traced_total.store(
+                num_traced_total.load(Ordering::Relaxed) + num_traced as usize,
+                Ordering::Relaxed,
+            );
+            completed_rows.store(
+                completed_rows.load(Ordering::Relaxed) + 1 as usize,
+                Ordering::Relaxed,
+            );
+            if row % ((0.1 * rows as f32) as usize) == 0 {
+                eprintln!(
+                    "[info] {:.2}%",
+                    completed_rows.load(Ordering::Relaxed) as f32 / rows as f32 * 100.0
+                );
+            }
         });
+    let num_traced_total = num_traced_total.load(Ordering::Relaxed) as u64;
     let duration = start.elapsed();
-    println!("[info] scene rendered in {:.2?}", duration);
+    println!(
+        "[info] scene rendered in {:.9?} on {} threads",
+        duration, num_threads
+    );
+    println!("[info] processed {} rays", num_traced_total);
+    println!(
+        "[info] rendered {:.2?} Mrays/s",
+        num_traced_total as f64 / duration.as_secs_f64() / 1e6
+    );
+    println!(
+        "[info] ray timing: {:.9?} ms/ray ",
+        1e3 * duration.as_secs_f64() / num_traced_total as f64
+    );
     eprintln!("[info] writing image...");
     _ = write_ppm(image, rows, cols);
     eprintln!("[ok] done!");
-    num_rays
+    num_traced_total
 }

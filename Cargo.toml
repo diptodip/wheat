@@ -1,5 +1,5 @@
 [package]
-name = "raytracer"
+name = "wheat"
 version = "0.1.0"
 authors = ["Diptodip Deb <dd@d2d.sh>"]
 edition = "2018"
