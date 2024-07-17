@@ -4,8 +4,8 @@ use crate::colors::RGB;
 pub enum Surface {
     Diffuse,
     Reflective,
-    FuzzyReflective(f64),
-    Refractive(f64),
+    FuzzyReflective(f32),
+    Refractive(f32),
 }
 
 #[derive(Copy, Clone)]

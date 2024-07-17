@@ -1,7 +1,7 @@
 use std::fs::{self, File};
 use std::io::{Error, Write};
 
-pub fn write_ppm(image: Vec<Vec<f64>>, rows: usize, cols: usize) -> Result<(), Error>{
+pub fn write_ppm(image: Vec<Vec<f32>>, rows: usize, cols: usize) -> Result<(), Error> {
     let mut f = File::create("image.ppm")?;
     writeln!(f, "P3");
     write!(f, "{}", cols);
@@ -9,7 +9,7 @@ pub fn write_ppm(image: Vec<Vec<f64>>, rows: usize, cols: usize) -> Result<(), E
     writeln!(f, "{}", rows);
     writeln!(f, "{}", 255);
     let cap = 255.999;
-    for i in 0..rows*cols {
+    for i in 0..rows * cols {
         let row = i / cols;
         let col = i % rows;
         let r = (cap * image[i][0].sqrt().min(0.999).max(0.0)) as i32;

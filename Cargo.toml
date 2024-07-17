@@ -1,7 +1,7 @@
 [package]
 name = "raytracer"
 version = "0.1.0"
-authors = ["Diptodip Deb <d2d.tar.gz@gmail.com>"]
+authors = ["Diptodip Deb <dd@d2d.sh>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

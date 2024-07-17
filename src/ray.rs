@@ -1,4 +1,5 @@
-use std::f64::consts::PI;
+use std::f32::consts::PI;
+use std::time::Instant;
 
 use crate::rand::prelude::*;
 
@@ -31,13 +32,17 @@ pub struct Ray {
 }
 
 impl Ray {
-    pub fn at(&self, t: f64) -> Vec3D {
+    pub fn at(&self, t: f32) -> Vec3D {
         self.origin + t * self.direction
     }
 }
 
-fn diffuse_bounce(intersection: &Intersection, intersectable: &Intersectable) -> Ray {
-    let bounce_vector = intersection.local_normal + Vec3D::random_unit_vector();
+fn diffuse_bounce(
+    rng: &mut ThreadRng,
+    intersection: &Intersection,
+    intersectable: &Intersectable,
+) -> Ray {
+    let bounce_vector = intersection.local_normal + Vec3D::random_unit_vector(rng);
     Ray {
         origin: intersection.point,
         direction: bounce_vector,
@@ -54,17 +59,22 @@ fn reflect(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray
     }
 }
 
-fn fuzzy_reflect(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray) -> Ray {
+fn fuzzy_reflect(
+    rng: &mut ThreadRng,
+    intersection: &Intersection,
+    intersectable: &Intersectable,
+    ray: &Ray,
+) -> Ray {
     let direction = ray.direction;
     let normal = intersection.local_normal;
     let reflected = direction - 2.0 * dot(&direction, &normal) * normal;
-    let mut fuzz: f64 = 0.0;
+    let mut fuzz: f32 = 0.0;
     let material = intersectable.material();
     let surface = material.surface;
     if let Surface::FuzzyReflective(surface_fuzz) = surface {
         fuzz = surface_fuzz;
     }
-    let direction_fuzz = fuzz * Vec3D::random_unit_vector();
+    let direction_fuzz = fuzz * Vec3D::random_unit_vector(rng);
     Ray {
         origin: intersection.point,
         direction: reflected + direction_fuzz,
@@ -72,13 +82,18 @@ fn fuzzy_reflect(intersection: &Intersection, intersectable: &Intersectable, ray
 }
 
 #[inline]
-fn schlick(cos_theta: f64, index_ratio: f64) -> f64 {
+fn schlick(cos_theta: f32, index_ratio: f32) -> f32 {
     let mut r0 = (1.0 - index_ratio) / (1.0 + index_ratio);
     r0 = r0 * r0;
     r0 + (1.0 - r0) * (1.0 - cos_theta).powf(5.0)
 }
 
-fn refract(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray) -> Ray {
+fn refract(
+    rng: &mut ThreadRng,
+    intersection: &Intersection,
+    intersectable: &Intersectable,
+    ray: &Ray,
+) -> Ray {
     let mut material_index = 1.0;
     let material = intersectable.material();
     let surface = material.surface;
@@ -97,8 +112,8 @@ fn refract(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray
         return reflect(intersection, intersectable, ray);
     }
     let reflectivity = schlick(cos_theta1, index_ratio);
-    let mut rng = rand::thread_rng();
-    let reflect_check: f64 = rng.gen();
+    // let mut rng = rand::thread_rng();
+    let reflect_check: f32 = rng.gen();
     if reflect_check < reflectivity {
         return reflect(intersection, intersectable, ray);
     }
@@ -110,13 +125,21 @@ fn refract(intersection: &Intersection, intersectable: &Intersectable, ray: &Ray
     }
 }
 
-fn trace(ray: &Ray, world: &Vec<Intersectable>, depth: u64) -> RGB {
+fn trace(
+    rng: &mut ThreadRng,
+    ray: &Ray,
+    world: &Vec<Intersectable>,
+    depth: u64,
+    num_casted: &mut u64,
+) -> RGB {
     // light enters the void if we hit the depth limit
     if depth <= 0 {
         return rgb(0.0, 0.0, 0.0);
     }
+    *num_casted += 1;
     // determine if ray intersects and choose first intersection if so
-    let (intersections, result) = find_intersections(ray, world);
+    // let (intersections, result) = find_intersections(ray, world);
+    let result = find_intersections(ray, world);
     match result {
         // calculate color at intersection point
         Some((intersection, intersectable)) => {
@@ -127,27 +150,27 @@ fn trace(ray: &Ray, world: &Vec<Intersectable>, depth: u64) -> RGB {
             if let Surface::Diffuse = surface {
                 // light bounces randomly if material is diffuse,
                 // so we recurse and trace a randomly bounced ray
-                let bounced = &diffuse_bounce(&intersection, intersectable);
-                traced_color = trace(bounced, world, depth - 1).to_vec3d();
+                let bounced = &diffuse_bounce(rng, &intersection, intersectable);
+                traced_color = trace(rng, bounced, world, depth - 1, num_casted).to_vec3d();
             } else if let Surface::Reflective = surface {
                 // light is reflected if material is totally reflective,
                 // so we recurse and trace a reflected ray
                 let reflected = &reflect(&intersection, intersectable, ray);
-                traced_color = trace(reflected, world, depth - 1).to_vec3d();
-            } else if let Surface::FuzzyReflective(fuzz) = surface {
+                traced_color = trace(rng, reflected, world, depth - 1, num_casted).to_vec3d();
+            } else if let Surface::FuzzyReflective(_fuzz) = surface {
                 // light is reflected with some random offset
                 // if material is fuzzy reflective,
                 // so we recurse and trace a fuzzy reflected ray
                 // with a check to make sure the reflection is correct
-                let reflected = &fuzzy_reflect(&intersection, intersectable, ray);
+                let reflected = &fuzzy_reflect(rng, &intersection, intersectable, ray);
                 if dot(&reflected.direction, &intersection.local_normal) > 0.0 {
-                    traced_color = trace(reflected, world, depth - 1).to_vec3d();
+                    traced_color = trace(rng, reflected, world, depth - 1, num_casted).to_vec3d();
                 }
-            } else if let Surface::Refractive(r) = surface {
+            } else if let Surface::Refractive(_r) = surface {
                 // light is refracted or reflected depending on angle,
                 // so we recurse to trace either a refracted/reflected ray
-                let refracted = &refract(&intersection, intersectable, ray);
-                traced_color = trace(refracted, world, depth - 1).to_vec3d();
+                let refracted = &refract(rng, &intersection, intersectable, ray);
+                traced_color = trace(rng, refracted, world, depth - 1, num_casted).to_vec3d();
             }
             let color_vec = material_color * traced_color;
             return vec_to_rgb(color_vec);
@@ -164,7 +187,13 @@ fn trace(ray: &Ray, world: &Vec<Intersectable>, depth: u64) -> RGB {
     }
 }
 
-pub fn render(world: &Vec<Intersectable>, camera: &Camera, rows: usize, cols: usize, samples_per_pixel: f64) {
+pub fn render(
+    world: &Vec<Intersectable>,
+    camera: &Camera,
+    rows: usize,
+    cols: usize,
+    samples_per_pixel: f32,
+) -> u64 {
     // construct blank image
     let mut image = vec![vec![0.0; 3]; rows * cols];
     let num_threads = current_num_threads();
@@ -174,46 +203,61 @@ pub fn render(world: &Vec<Intersectable>, camera: &Camera, rows: usize, cols: us
     );
     eprintln!("[info] {:.2}%", 0.0);
     // need an atomic counter so rust doesn't complain about thread safety
-    let mut completed_rows = AtomicUsize::new(0);
+    let completed_rows = AtomicUsize::new(0);
+    let num_rays: u64 = 0;
     // iterate through pixels in parallel
-    image.par_chunks_mut(cols).enumerate().for_each(|(row, chunk)| {
-        // create RNG
-        let mut rng = rand::thread_rng();
-        // loop through columns in row
-        for col in 0..cols {
-            if (col == (cols - 1)) {
-                // have to use atomic counter updating functions here
-                completed_rows.store(completed_rows.load(Ordering::Relaxed) + 1 as usize, Ordering::Relaxed);
-                eprintln!("[info] {:.2}%", completed_rows.load(Ordering::Relaxed) as f64 / rows as f64 * 100.0);
+    let start = Instant::now();
+    image
+        .par_chunks_mut(cols)
+        .enumerate()
+        .for_each(|(row, chunk)| {
+            // create RNG
+            let mut rng = rand::thread_rng();
+            let mut num_traced = 0;
+            // loop through columns in row
+            for col in 0..cols {
+                if (col == (cols - 1)) {
+                    // have to use atomic counter updating functions here
+                    completed_rows.store(
+                        completed_rows.load(Ordering::Relaxed) + 1 as usize,
+                        Ordering::Relaxed,
+                    );
+                    eprintln!(
+                        "[info] {:.2}%",
+                        completed_rows.load(Ordering::Relaxed) as f32 / rows as f32 * 100.0
+                    );
+                }
+                let mut r: f32 = 0.0;
+                let mut g: f32 = 0.0;
+                let mut b: f32 = 0.0;
+                for _sample in 0..samples_per_pixel as usize {
+                    // calculate ray for current pixel
+                    // making sure to center ray within pixel
+                    // we also perturb the ray direction slightly per sample
+                    let row_rand = rng.gen::<f32>();
+                    let col_rand = rng.gen::<f32>();
+                    let row_frac = (row as f32 + 0.5 + row_rand) / (rows as f32);
+                    let col_frac = (col as f32 + 0.5 + col_rand) / (cols as f32);
+                    let ray = camera.prime_ray(&mut rng, row_frac, col_frac);
+                    // trace ray for current pixel
+                    let color = trace(&mut rng, &ray, world, 50, &mut num_traced);
+                    r += color.r;
+                    g += color.g;
+                    b += color.b;
+                }
+                r /= samples_per_pixel;
+                g /= samples_per_pixel;
+                b /= samples_per_pixel;
+                let pixel = &mut chunk[col];
+                pixel[0] = r;
+                pixel[1] = g;
+                pixel[2] = b;
             }
-            let mut r: f64 = 0.0;
-            let mut g: f64 = 0.0;
-            let mut b: f64 = 0.0;
-            for sample in 0..samples_per_pixel as usize {
-                // calculate ray for current pixel
-                // making sure to center ray within pixel
-                // we also perturb the ray direction slightly per sample
-                let row_rand = rng.gen::<f64>();
-                let col_rand = rng.gen::<f64>();
-                let row_frac = (row as f64 + 0.5 + row_rand) / (rows as f64);
-                let col_frac = (col as f64 + 0.5 + col_rand) / (cols as f64);
-                let ray = camera.prime_ray(row_frac, col_frac);
-                // trace ray for current pixel
-                let color = trace(&ray, world, 50);
-                r += color.r;
-                g += color.g;
-                b += color.b;
-            }
-            r /= samples_per_pixel;
-            g /= samples_per_pixel;
-            b /= samples_per_pixel;
-            let mut pixel = &mut chunk[col];
-            pixel[0] = r;
-            pixel[1] = g;
-            pixel[2] = b;
-        }
-    });
+        });
+    let duration = start.elapsed();
+    println!("[info] scene rendered in {:.2?}", duration);
     eprintln!("[info] writing image...");
-    write_ppm(image, rows, cols);
+    _ = write_ppm(image, rows, cols);
     eprintln!("[ok] done!");
+    num_rays
 }

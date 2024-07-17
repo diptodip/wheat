@@ -1,8 +1,5 @@
-use std::f64::consts::PI;
-use std::f64::INFINITY;
+use std::f32::INFINITY;
 use std::option::Option;
-
-use crate::rand::prelude::*;
 
 use crate::linalg::dot;
 use crate::linalg::Vec3D;
@@ -14,7 +11,7 @@ use crate::ray::Ray;
 #[derive(Copy, Clone)]
 pub struct Intersection {
     pub point: Vec3D,
-    pub distance: f64,
+    pub distance: f32,
     pub local_normal: Vec3D,
     pub inside: bool,
 }
@@ -38,7 +35,7 @@ pub trait Intersects {
 
 pub struct Sphere {
     pub origin: Vec3D,
-    pub radius: f64,
+    pub radius: f32,
     pub material: Material,
 }
 
@@ -60,10 +57,10 @@ impl Intersects for Sphere {
         let discriminant_sqrt = discriminant.sqrt();
         let t0 = (-h - discriminant_sqrt) / a;
         let t1 = (-h + discriminant_sqrt) / a;
-        if t0 < 1e-6 && t1 < 1e-6 {
+        if t0 < 1e-2 && t1 < 1e-2 {
             return None;
         }
-        let t = if t0 >= 1e-6 { t0 } else { t1 };
+        let t = if t0 >= 1e-4 { t0 } else { t1 };
         let point = ray.at(t);
         let surface_normal = self.surface_normal(point);
         let mut inside = false;
@@ -117,16 +114,14 @@ impl Intersects for Intersectable {
 pub fn find_intersections<'a, 'b>(
     ray: &'a Ray,
     world: &'b Vec<Intersectable>,
-) -> (Vec<Option<Intersection>>, Option<(Intersection, &'b Intersectable)>) {
+) -> Option<(Intersection, &'b Intersectable)> {
     // calculate intersection list
     let num_objects = world.len() as usize;
-    let mut intersections = Vec::with_capacity(num_objects);
     let mut closest_distance = INFINITY;
     let mut closest_intersectable = &world[0];
     let mut closest_intersection = Intersection::default();
     for i in 0..num_objects {
         let result = world[i].intersects(ray);
-        intersections.push(result);
         match result {
             Some(intersection) => {
                 if intersection.distance < closest_distance {
@@ -139,8 +134,8 @@ pub fn find_intersections<'a, 'b>(
         }
     }
     if closest_distance == INFINITY {
-        (intersections, None)
+        None
     } else {
-        (intersections, Some((closest_intersection, closest_intersectable)))
+        Some((closest_intersection, closest_intersectable))
     }
 }

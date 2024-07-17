@@ -1,5 +1,4 @@
 extern crate rand;
-use std::time::Instant;
 
 use rand::prelude::*;
 
@@ -36,7 +35,7 @@ use ray::*;
 
 fn test_spheres() {
     // construct camera
-    let fov = 20.0_f64.to_radians();
+    let fov = 20.0_f32.to_radians();
     let aspect_ratio = 16.0 / 9.0;
     let pixel_height = 216.0;
     let (image_plane_height, image_plane_width) = fov_to_imsize(fov, aspect_ratio);
@@ -84,7 +83,7 @@ fn test_spheres() {
     });
     let small_glass_sphere = Intersectable::Sphere(Sphere {
         origin: Vec3D(-1.0, 0.0, -1.0),
-        radius: -0.45,
+        radius: -0.4,
         material: Material {
             color: rgb(1.0, 1.0, 1.0),
             surface: Surface::Refractive(1.5),
@@ -115,9 +114,9 @@ fn test_spheres() {
 
 fn random_spheres() {
     // construct camera
-    let fov = 20.0_f64.to_radians();
-    let aspect_ratio = 1.5;
-    let pixel_height = 300.0;
+    let fov = 20.0_f32.to_radians();
+    let aspect_ratio = 16.0 / 9.0;
+    let pixel_height = 360.0;
     let (image_plane_height, image_plane_width) = fov_to_imsize(fov, aspect_ratio);
     let (rows, cols, pixel_size) = imsize_to_pixels(
         image_plane_height,
@@ -153,14 +152,14 @@ fn random_spheres() {
     });
     world.push(ground);
     // construct random small spheres in scene
-    let mut rng = rand::thread_rng();
+    let mut rng = thread_rng();
     for i in -11..11 {
         for j in -11..11 {
-            let material_check = rng.gen::<f64>();
+            let material_check = rng.gen::<f32>();
             let center = Vec3D(
-                i as f64 + 0.9 * rng.gen::<f64>(),
+                i as f32 + 0.9 * rng.gen::<f32>(),
                 0.2,
-                j as f64 + 0.9 * rng.gen::<f64>(),
+                j as f32 + 0.9 * rng.gen::<f32>(),
             );
             if (center - Vec3D(4.0, 0.2, 0.0)).length() > 0.9 {
                 if material_check < 0.8 {
@@ -177,8 +176,8 @@ fn random_spheres() {
                     world.push(diffuse_sphere);
                 } else if material_check < 0.95 {
                     // make fuzzy reflective sphere
-                    let color = vec_to_rgb(Vec3D::random(0.5, 1.0, 0.5, 1.0, 0.5, 1.0));
-                    let fuzz: f64 = rng.gen_range(0.0, 0.5);
+                    let color = vec_to_rgb(Vec3D::random(&mut rng, 0.5, 1.0, 0.5, 1.0, 0.5, 1.0));
+                    let fuzz: f32 = rng.gen_range(0.0, 0.5);
                     let reflective_sphere = Intersectable::Sphere(Sphere {
                         origin: center,
                         radius: 0.2,
@@ -236,8 +235,6 @@ fn random_spheres() {
 }
 
 fn main() {
-    let start = Instant::now();
-    random_spheres();
-    let end = start.elapsed();
-    println!("[info] scene rendered in {:.2?}", end);
+    // random_spheres();
+    test_spheres();
 }

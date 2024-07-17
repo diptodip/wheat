@@ -1,10 +1,11 @@
 use crate::linalg::Vec3D;
+use crate::rand::prelude::*;
 
 #[derive(Copy, Clone)]
 pub struct RGB {
-    pub r: f64,
-    pub g: f64,
-    pub b: f64,
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
 }
 
 impl RGB {
@@ -13,12 +14,13 @@ impl RGB {
     }
 
     pub fn random() -> RGB {
-        let color_vec = Vec3D::random(0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
+        let mut rng = thread_rng();
+        let color_vec = Vec3D::random(&mut rng, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
         vec_to_rgb(color_vec)
     }
 }
 
-pub fn rgb(r: f64, g: f64, b: f64) -> RGB {
+pub fn rgb(r: f32, g: f32, b: f32) -> RGB {
     let color_vec = Vec3D(r, g, b).clamp(0.0, 1.0);
     RGB {
         r: color_vec.0,
