@@ -218,14 +218,8 @@ pub fn render(
                 pixel[2] = b;
             }
             // have to use atomic counter updating functions here
-            num_traced_total.store(
-                num_traced_total.load(Ordering::Relaxed) + num_traced as usize,
-                Ordering::Relaxed,
-            );
-            completed_rows.store(
-                completed_rows.load(Ordering::Relaxed) + 1 as usize,
-                Ordering::Relaxed,
-            );
+            num_traced_total.fetch_add(num_traced as usize, Ordering::Relaxed);
+            completed_rows.fetch_add(1, Ordering::Relaxed);
             if row % ((0.1 * rows as f32) as usize) == 0 {
                 eprintln!(
                     "[info] {:.2}%",
