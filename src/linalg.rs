@@ -1,7 +1,7 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-use rand::prelude::*;
-// use crate::rand::PRNG;
+// use rand::prelude::*;
+use crate::rand::PRNG;
 
 #[derive(Copy, Clone)]
 pub struct Vec3D(pub f32, pub f32, pub f32);
@@ -41,7 +41,7 @@ impl Vec3D {
     }
 
     pub fn random(
-        rng: &mut ThreadRng,
+        rng: &mut PRNG,
         min0: f32,
         max0: f32,
         min1: f32,
@@ -57,7 +57,7 @@ impl Vec3D {
         )
     }
 
-    pub fn random_unit_vector(rng: &mut ThreadRng) -> Vec3D {
+    pub fn random_unit_vector(rng: &mut PRNG) -> Vec3D {
         loop {
             let point = Vec3D::random(rng, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
             let norm_squared = point.length_squared();
@@ -67,7 +67,7 @@ impl Vec3D {
         }
     }
 
-    pub fn random_unit_disk_vector(rng: &mut ThreadRng) -> Vec3D {
+    pub fn random_unit_disk_vector(rng: &mut PRNG) -> Vec3D {
         loop {
             let point = Vec3D::random(rng, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
             let norm_squared = point.length_squared();

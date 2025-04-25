@@ -1,4 +1,4 @@
-use crate::rand::prelude::*;
+use crate::rand::PRNG;
 
 use crate::linalg::cross;
 use crate::linalg::Vec3D;
@@ -17,7 +17,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn prime_ray(self, rng: &mut ThreadRng, row_frac: f32, col_frac: f32) -> Ray {
+    pub fn prime_ray(self, rng: &mut PRNG, row_frac: f32, col_frac: f32) -> Ray {
         let height = self.height as f32;
         let width = self.width as f32;
         let focal_distance = self.focal_distance;

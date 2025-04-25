@@ -74,10 +74,10 @@ impl Intersects for Sphere {
         };
         let distance = (point - ray.origin).length();
         let intersection = Intersection {
-            point: point,
-            distance: distance,
-            local_normal: local_normal,
-            inside: inside,
+            point,
+            distance,
+            local_normal,
+            inside,
         };
         Some(intersection)
     }

@@ -1,24 +1,17 @@
-extern crate rand;
-
-use rand::prelude::*;
+mod rand;
+use rand::PRNG;
 
 mod linalg;
-use linalg::dot;
 use linalg::Vec3D;
 
 mod colors;
 use colors::rgb;
-use colors::vec_to_rgb;
 use colors::RGB;
 
 mod io;
-use io::write_ppm;
 
 mod geometry;
-use geometry::find_intersections;
 use geometry::Intersectable;
-use geometry::Intersection;
-use geometry::Intersects;
 use geometry::Sphere;
 
 mod camera;
@@ -31,7 +24,7 @@ use materials::Material;
 use materials::Surface;
 
 mod ray;
-use ray::*;
+use ray::render;
 
 fn test_spheres() {
     // construct camera
@@ -39,7 +32,7 @@ fn test_spheres() {
     let aspect_ratio = 16.0 / 9.0;
     let pixel_height = 216.0;
     let (image_plane_height, image_plane_width) = fov_to_imsize(fov, aspect_ratio);
-    let (rows, cols, pixel_size) = imsize_to_pixels(
+    let (rows, cols, _pixel_size) = imsize_to_pixels(
         image_plane_height,
         image_plane_width,
         image_plane_height / pixel_height,
@@ -124,7 +117,7 @@ fn random_spheres() {
     let aspect_ratio = 16.0 / 9.0;
     let pixel_height = 360.0;
     let (image_plane_height, image_plane_width) = fov_to_imsize(fov, aspect_ratio);
-    let (rows, cols, pixel_size) = imsize_to_pixels(
+    let (rows, cols, _pixel_size) = imsize_to_pixels(
         image_plane_height,
         image_plane_width,
         image_plane_height / pixel_height,
@@ -160,19 +153,19 @@ fn random_spheres() {
     });
     world.push(ground);
     // construct random small spheres in scene
-    let mut rng = thread_rng();
+    let mut rng = PRNG {
+        state: camera.height as u32,
+    };
     for i in -11..11 {
         for j in -11..11 {
-            let material_check = rng.gen::<f32>();
-            let center = Vec3D(
-                i as f32 + 0.9 * rng.gen::<f32>(),
-                0.2,
-                j as f32 + 0.9 * rng.gen::<f32>(),
-            );
+            let material_check = rng.gen();
+            let center = Vec3D(i as f32 + 0.9 * rng.gen(), 0.2, j as f32 + 0.9 * rng.gen());
             if (center - Vec3D(4.0, 0.2, 0.0)).length() > 0.9 {
                 if material_check < 0.8 {
                     // make diffuse sphere
-                    let color = vec_to_rgb(RGB::random().to_vec3d() * RGB::random().to_vec3d());
+                    let color = RGB::from_vec(
+                        RGB::random(&mut rng).to_vec3d() * RGB::random(&mut rng).to_vec3d(),
+                    );
                     let diffuse_sphere = Intersectable::Sphere(Sphere {
                         origin: center,
                         radius: 0.2,
@@ -185,7 +178,8 @@ fn random_spheres() {
                     world.push(diffuse_sphere);
                 } else if material_check < 0.95 {
                     // make fuzzy reflective sphere
-                    let color = vec_to_rgb(Vec3D::random(&mut rng, 0.5, 1.0, 0.5, 1.0, 0.5, 1.0));
+                    let color =
+                        RGB::from_vec(Vec3D::random(&mut rng, 0.5, 1.0, 0.5, 1.0, 0.5, 1.0));
                     let fuzz: f32 = rng.gen_range(0.0, 0.5);
                     let reflective_sphere = Intersectable::Sphere(Sphere {
                         origin: center,

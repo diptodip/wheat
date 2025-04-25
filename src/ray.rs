@@ -1,12 +1,11 @@
 use std::time::Instant;
 
-use crate::rand::prelude::*;
+// use crate::rand::prelude::*;
+use crate::rand::PRNG;
 
 use crate::linalg::dot;
 use crate::linalg::Vec3D;
 
-use crate::colors::rgb;
-use crate::colors::vec_to_rgb;
 use crate::colors::RGB;
 
 use crate::io::write_ppm;
@@ -35,7 +34,7 @@ impl Ray {
     }
 }
 
-fn diffuse_bounce(rng: &mut ThreadRng, intersection: &Intersection) -> Ray {
+fn diffuse_bounce(rng: &mut PRNG, intersection: &Intersection) -> Ray {
     let bounce_vector = intersection.local_normal + Vec3D::random_unit_vector(rng);
     Ray {
         origin: intersection.point,
@@ -54,7 +53,7 @@ fn reflect(intersection: &Intersection, ray: &Ray) -> Ray {
 }
 
 fn fuzzy_reflect(
-    rng: &mut ThreadRng,
+    rng: &mut PRNG,
     intersection: &Intersection,
     intersectable: &Intersectable,
     ray: &Ray,
@@ -83,7 +82,7 @@ fn schlick(cos_theta: f32, index_ratio: f32) -> f32 {
 }
 
 fn refract(
-    rng: &mut ThreadRng,
+    rng: &mut PRNG,
     intersection: &Intersection,
     intersectable: &Intersectable,
     ray: &Ray,
@@ -112,7 +111,7 @@ fn refract(
         return reflect(intersection, ray);
     }
     let r2_per = index_ratio * (r1 + cos_theta1 * intersection.local_normal);
-    let r2_par = (-(1.0 - r2_per.length_squared()).sqrt() * intersection.local_normal);
+    let r2_par = -(1.0 - r2_per.length_squared()).sqrt() * intersection.local_normal;
     Ray {
         origin: intersection.point,
         direction: r2_per + r2_par,
@@ -120,7 +119,7 @@ fn refract(
 }
 
 fn trace(
-    rng: &mut ThreadRng,
+    rng: &mut PRNG,
     background: RGB,
     ray: Ray,
     world: &Vec<Intersectable>,
@@ -157,11 +156,11 @@ fn trace(
             }
             None => {
                 color += attenuation * background;
-                return vec_to_rgb(color);
+                return RGB::from_vec(color);
             }
         }
     }
-    return vec_to_rgb(color);
+    return RGB::from_vec(color);
 }
 
 pub fn render(
@@ -176,7 +175,6 @@ pub fn render(
     let mut image: Vec<Vec<f32>> = vec![vec![0.0; 3]; rows * cols];
     let num_threads = current_num_threads();
     eprintln!("[start] rendering {}px x {}px (width x height)", cols, rows);
-    eprintln!("[info] {:.2}%", 0.0);
     // need an atomic counter so rust doesn't complain about thread safety
     let completed_rows = AtomicUsize::new(0);
     let num_traced_total = AtomicUsize::new(0);
@@ -187,7 +185,10 @@ pub fn render(
         .enumerate()
         .for_each(|(row, chunk)| {
             // create RNG
-            let mut rng = rand::thread_rng();
+            let mut rng = PRNG {
+                state: 52515411 + world.len() as u32 + row as u32,
+            };
+            rng.warm_up_xor_shift();
             let mut num_traced = 0;
             // loop through columns in row
             for col in 0..cols {
@@ -198,8 +199,8 @@ pub fn render(
                     // calculate ray for current pixel
                     // making sure to center ray within pixel
                     // we also perturb the ray direction slightly per sample
-                    let row_rand = rng.gen::<f32>();
-                    let col_rand = rng.gen::<f32>();
+                    let row_rand = rng.gen();
+                    let col_rand = rng.gen();
                     let row_frac = (row as f32 + 0.5 + row_rand) / (rows as f32);
                     let col_frac = (col as f32 + 0.5 + col_rand) / (cols as f32);
                     let ray = camera.prime_ray(&mut rng, row_frac, col_frac);
